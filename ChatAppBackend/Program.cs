@@ -16,6 +16,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Auth service
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+builder.Services.AddScoped<IChatRoomService, ChatRoomService>();
+
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = jwtSettings["SecretKey"]!;
