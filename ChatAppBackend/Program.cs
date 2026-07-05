@@ -1,5 +1,6 @@
 using System.Text;
 using ChatAppBackend.Data;
+using ChatAppBackend.Hubs;
 using ChatAppBackend.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -13,9 +14,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Auth service
+// Services
 builder.Services.AddScoped<IAuthService, AuthService>();
-
 builder.Services.AddScoped<IChatRoomService, ChatRoomService>();
 
 // JWT Authentication
@@ -60,6 +60,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddOpenApi();
 
 // CORS — allow Angular dev server
@@ -86,5 +87,8 @@ app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// Map SignalR hub
+app.MapHub<ChatHub>("/chathub");
 
 app.Run();
