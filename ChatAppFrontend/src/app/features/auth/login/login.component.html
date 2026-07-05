@@ -1,0 +1,54 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <h1>💬 ChatApp</h1>
+      <p>Welcome back! Sign in to continue.</p>
+    </div>
+
+    @if (error()) {
+      <div class="auth-error">{{ error() }}</div>
+    }
+
+    <form (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input
+          class="form-input"
+          type="email"
+          placeholder="Enter your email"
+          [(ngModel)]="email"
+          name="email"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input
+          class="form-input"
+          type="password"
+          placeholder="Enter your password"
+          [(ngModel)]="password"
+          name="password"
+          required
+        />
+      </div>
+
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="loading()">
+        @if (loading()) {
+          <span class="spinner"></span>
+        } @else {
+          Sign In
+        }
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      Don't have an account?
+      <a routerLink="/register">Create one</a>
+    </div>
+  </div>
+</div>
