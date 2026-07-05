@@ -1,1 +1,375 @@
-/* You can add global styles to this file, and also import other style files */
+/* ===========================
+   GLOBAL CSS VARIABLES
+=========================== */
+:root {
+  /* Colors */
+  --primary: #6c63ff;
+  --primary-dark: #5a52d5;
+  --primary-light: #ebe9ff;
+  --accent: #ff6584;
+  --success: #4caf50;
+  --warning: #ff9800;
+  --danger: #f44336;
+
+  /* Neutrals */
+  --bg: #f5f5f5;
+  --bg-white: #ffffff;
+  --bg-dark: #1e1e2e;
+  --sidebar-bg: #2d2d44;
+  --sidebar-text: #cdd6f4;
+
+  /* Text */
+  --text-primary: #1a1a2e;
+  --text-secondary: #6b7280;
+  --text-light: #ffffff;
+
+  /* Borders */
+  --border: #e5e7eb;
+  --border-radius: 12px;
+  --border-radius-sm: 8px;
+  --border-radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Font */
+  --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+
+  /* Transitions */
+  --transition: all 0.2s ease;
+
+  /* Layout */
+  --sidebar-width: 320px;
+  --header-height: 64px;
+}
+
+/* ===========================
+   RESET & BASE
+=========================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  background-color: var(--bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===========================
+   TYPOGRAPHY
+=========================== */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+p { color: var(--text-secondary); }
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+a:hover { color: var(--primary-dark); }
+
+/* ===========================
+   SHARED BUTTON STYLES
+=========================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: 10px 20px;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--text-light);
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--border-radius-sm);
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--primary);
+  border: 2px solid var(--primary);
+}
+
+.btn-secondary:hover {
+  background: var(--primary-light);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: var(--text-light);
+}
+
+.btn-icon {
+  background: transparent;
+  border: none;
+  padding: var(--spacing-sm);
+  border-radius: var(--border-radius-full);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  color: var(--text-secondary);
+}
+
+.btn-icon:hover {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+/* ===========================
+   SHARED FORM STYLES
+=========================== */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+}
+
+.form-label {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  color: var(--text-primary);
+  background: var(--bg-white);
+  transition: var(--transition);
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1);
+}
+
+.form-input::placeholder { color: var(--text-secondary); }
+
+.form-error {
+  font-size: var(--font-size-sm);
+  color: var(--danger);
+  margin-top: 2px;
+}
+
+/* ===========================
+   AUTH PAGE SHARED STYLES
+=========================== */
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: var(--spacing-md);
+}
+
+.auth-card {
+  background: var(--bg-white);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-xl);
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow-lg);
+}
+
+.auth-logo {
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.auth-logo h1 {
+  font-size: var(--font-size-2xl);
+  color: var(--primary);
+  margin-top: var(--spacing-sm);
+}
+
+.auth-logo p {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin-top: var(--spacing-xs);
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: var(--spacing-lg);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.auth-footer a {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.auth-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--danger);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-md);
+  text-align: center;
+}
+
+/* ===========================
+   AVATAR
+=========================== */
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--border-radius-full);
+  background: var(--primary);
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.avatar-sm {
+  width: 32px;
+  height: 32px;
+  font-size: 0.75rem;
+}
+
+.avatar-lg {
+  width: 56px;
+  height: 56px;
+  font-size: var(--font-size-lg);
+}
+
+/* ===========================
+   ONLINE INDICATOR
+=========================== */
+.online-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--border-radius-full);
+  background: var(--success);
+  border: 2px solid var(--bg-white);
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+
+/* ===========================
+   LOADING SPINNER
+=========================== */
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--primary-light);
+  border-top-color: var(--primary);
+  border-radius: var(--border-radius-full);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===========================
+   SCROLLBAR
+=========================== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--border-radius-full);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+/* ===========================
+   RESPONSIVE BREAKPOINTS
+=========================== */
+
+/* Tablet */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 100%;
+    --spacing-xl: 24px;
+  }
+
+  .auth-card {
+    padding: var(--spacing-lg);
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  :root {
+    --font-size-2xl: 1.25rem;
+    --spacing-xl: 20px;
+  }
+
+  .auth-card {
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-sm);
+  }
+}
