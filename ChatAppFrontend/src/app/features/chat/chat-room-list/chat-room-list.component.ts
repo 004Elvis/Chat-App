@@ -1,8 +1,10 @@
-import { Component, Input, Output, EventEmitter, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter,
+  signal, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChatRoom } from '../../../core/models/chat-room.model';
 import { User } from '../../../core/models/user.model';
+import { UserService } from '../../../core/services/user.service';
 
 @Component({
   selector: 'app-chat-room-list',
@@ -11,7 +13,7 @@ import { User } from '../../../core/models/user.model';
   templateUrl: './chat-room-list.component.html',
   styleUrl: './chat-room-list.component.css'
 })
-export class ChatRoomListComponent {
+export class ChatRoomListComponent implements OnChanges {
   @Input() rooms: ChatRoom[] = [];
   @Input() selectedRoom: ChatRoom | null = null;
   @Input() currentUser: User | null = null;
@@ -20,8 +22,23 @@ export class ChatRoomListComponent {
   @Output() logoutClicked = new EventEmitter<void>();
 
   showCreateRoom = signal(false);
+  showAddMember = signal(false);
   newRoomName = '';
   searchQuery = '';
+  memberSearchQuery = '';
+  searchResults = signal<User[]>([]);
+  addMemberSuccess = signal('');
+  addMemberError = signal('');
+
+  constructor(private userService: UserService) {}
+
+  ngOnChanges(): void {
+    this.showAddMember.set(false);
+    this.memberSearchQuery = '';
+    this.searchResults.set([]);
+    this.addMemberSuccess.set('');
+    this.addMemberError.set('');
+  }
 
   get filteredRooms(): ChatRoom[] {
     if (!this.searchQuery.trim()) return this.rooms;
@@ -46,7 +63,6 @@ export class ChatRoomListComponent {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
     if (days === 0) {
       return date.toLocaleTimeString([], {
         hour: '2-digit', minute: '2-digit'
@@ -56,7 +72,9 @@ export class ChatRoomListComponent {
     } else if (days < 7) {
       return date.toLocaleDateString([], { weekday: 'short' });
     } else {
-      return date.toLocaleDateString([], { day: '2-digit', month: 'short' });
+      return date.toLocaleDateString([], {
+        day: '2-digit', month: 'short'
+      });
     }
   }
 
@@ -66,5 +84,33 @@ export class ChatRoomListComponent {
       this.newRoomName = '';
       this.showCreateRoom.set(false);
     }
+  }
+
+  searchUsers(): void {
+    if (this.memberSearchQuery.trim().length < 2) {
+      this.searchResults.set([]);
+      return;
+    }
+    this.userService.searchUsers(this.memberSearchQuery).subscribe({
+      next: users => this.searchResults.set(users),
+      error: () => this.searchResults.set([])
+    });
+  }
+
+  addMember(user: User): void {
+    if (!this.selectedRoom) return;
+    this.addMemberSuccess.set('');
+    this.addMemberError.set('');
+
+    this.userService.addMember(this.selectedRoom.id, user.id).subscribe({
+      next: () => {
+        this.addMemberSuccess.set(`${user.userName} added successfully!`);
+        this.memberSearchQuery = '';
+        this.searchResults.set([]);
+      },
+      error: () => {
+        this.addMemberError.set(`Failed to add ${user.userName}.`);
+      }
+    });
   }
 }

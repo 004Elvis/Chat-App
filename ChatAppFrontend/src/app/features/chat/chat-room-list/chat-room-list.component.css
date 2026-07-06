@@ -165,3 +165,69 @@
   flex-shrink: 0;
   margin-left: var(--spacing-sm);
 }
+.add-member-title {
+  font-size: var(--font-size-sm);
+  color: var(--sidebar-text);
+  margin-bottom: var(--spacing-xs);
+}
+
+.add-member-title strong {
+  color: white;
+}
+
+.add-member-success {
+  font-size: var(--font-size-sm);
+  color: #4caf50;
+}
+
+.add-member-error {
+  font-size: var(--font-size-sm);
+  color: #f44336;
+}
+
+.search-results {
+  background: rgba(255,255,255,0.05);
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+  margin-bottom: var(--spacing-sm);
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.search-result-item:hover {
+  background: rgba(108, 99, 255, 0.3);
+}
+
+.search-result-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.search-result-name {
+  font-size: var(--font-size-sm);
+  color: var(--sidebar-text);
+  font-weight: 600;
+}
+
+.search-result-email {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.4);
+}
+
+.add-btn {
+  font-size: 0.7rem;
+  color: var(--primary);
+  font-weight: 600;
+  background: rgba(108,99,255,0.2);
+  padding: 2px 8px;
+  border-radius: var(--border-radius-full);
+}

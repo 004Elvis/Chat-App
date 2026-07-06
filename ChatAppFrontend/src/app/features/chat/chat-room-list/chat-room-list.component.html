@@ -10,6 +10,12 @@
       (click)="showCreateRoom.set(!showCreateRoom())">
       ✏️
     </button>
+    @if (selectedRoom) {
+      <button class="btn-icon" title="Add Member"
+        (click)="showAddMember.set(!showAddMember())">
+        👥
+      </button>
+    }
     <button class="btn-icon" title="Logout"
       (click)="logoutClicked.emit()">
       🚪
@@ -17,7 +23,7 @@
   </div>
 </div>
 
-<!-- Search -->
+<!-- Search rooms -->
 <div class="sidebar-search">
   <input
     class="search-input"
@@ -38,10 +44,59 @@
       (keyup.enter)="createRoom()"
     />
     <div class="create-room-actions">
-      <button class="btn btn-primary" (click)="createRoom()">Create</button>
+      <button class="btn btn-primary" (click)="createRoom()">
+        Create
+      </button>
       <button class="btn btn-secondary"
-        (click)="showCreateRoom.set(false)">Cancel</button>
+        (click)="showCreateRoom.set(false)">
+        Cancel
+      </button>
     </div>
+  </div>
+}
+
+<!-- Add member form -->
+@if (showAddMember() && selectedRoom) {
+  <div class="create-room-form">
+    <p class="add-member-title">
+      Add member to <strong>{{ selectedRoom.name }}</strong>
+    </p>
+    <input
+      class="form-input"
+      type="text"
+      placeholder="Search by username or email..."
+      [(ngModel)]="memberSearchQuery"
+      (input)="searchUsers()"
+    />
+
+    @if (addMemberSuccess()) {
+      <p class="add-member-success">✅ {{ addMemberSuccess() }}</p>
+    }
+    @if (addMemberError()) {
+      <p class="add-member-error">❌ {{ addMemberError() }}</p>
+    }
+
+    @if (searchResults().length > 0) {
+      <div class="search-results">
+        @for (user of searchResults(); track user.id) {
+          <div class="search-result-item" (click)="addMember(user)">
+            <div class="avatar avatar-sm">
+              {{ getInitials(user.userName) }}
+            </div>
+            <div class="search-result-info">
+              <span class="search-result-name">{{ user.userName }}</span>
+              <span class="search-result-email">{{ user.email }}</span>
+            </div>
+            <span class="add-btn">+ Add</span>
+          </div>
+        }
+      </div>
+    }
+
+    <button class="btn btn-secondary"
+      (click)="showAddMember.set(false)">
+      Close
+    </button>
   </div>
 }
 

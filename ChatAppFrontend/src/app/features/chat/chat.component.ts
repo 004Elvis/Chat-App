@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, AsyncPipe } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { SignalRService } from '../../core/services/signalr.service';
 import { ChatService } from '../../core/services/chat.service';
@@ -11,7 +11,7 @@ import { ChatWindowComponent } from './chat-window/chat-window.component';
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, ChatRoomListComponent, ChatWindowComponent],
+  imports: [CommonModule, AsyncPipe, ChatRoomListComponent, ChatWindowComponent],
   templateUrl: './chat.component.html',
   styleUrl: './chat.component.css'
 })
