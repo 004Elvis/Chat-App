@@ -1,0 +1,86 @@
+<div class="sidebar-header">
+  <div class="sidebar-user">
+    <div class="avatar">
+      {{ getInitials(currentUser?.userName || 'U') }}
+    </div>
+    <span class="sidebar-username">{{ currentUser?.userName }}</span>
+  </div>
+  <div class="sidebar-actions">
+    <button class="btn-icon" title="New Room"
+      (click)="showCreateRoom.set(!showCreateRoom())">
+      ✏️
+    </button>
+    <button class="btn-icon" title="Logout"
+      (click)="logoutClicked.emit()">
+      🚪
+    </button>
+  </div>
+</div>
+
+<!-- Search -->
+<div class="sidebar-search">
+  <input
+    class="search-input"
+    type="text"
+    placeholder="🔍 Search rooms..."
+    [(ngModel)]="searchQuery"
+  />
+</div>
+
+<!-- Create room form -->
+@if (showCreateRoom()) {
+  <div class="create-room-form">
+    <input
+      class="form-input"
+      type="text"
+      placeholder="Room name..."
+      [(ngModel)]="newRoomName"
+      (keyup.enter)="createRoom()"
+    />
+    <div class="create-room-actions">
+      <button class="btn btn-primary" (click)="createRoom()">Create</button>
+      <button class="btn btn-secondary"
+        (click)="showCreateRoom.set(false)">Cancel</button>
+    </div>
+  </div>
+}
+
+<!-- Room list -->
+<div class="room-list">
+  @if (filteredRooms.length === 0) {
+    <div class="no-rooms">
+      <p>No rooms found.</p>
+      <p>Create one to get started!</p>
+    </div>
+  }
+
+  @for (room of filteredRooms; track room.id) {
+    <div
+      class="room-item"
+      [class.room-item-active]="selectedRoom?.id === room.id"
+      (click)="roomSelected.emit(room)"
+    >
+      <div class="room-avatar">
+        {{ getInitials(room.name) }}
+      </div>
+      <div class="room-info">
+        <div class="room-header">
+          <span class="room-name">{{ room.name }}</span>
+          @if (room.lastMessage) {
+            <span class="room-time">
+              {{ formatTime(room.lastMessage.sentAt) }}
+            </span>
+          }
+        </div>
+        <div class="room-preview">
+          <span class="room-last-message">
+            {{ getLastMessagePreview(room) }}
+          </span>
+          @if (room.unreadCount > 0) {
+            <span class="unread-badge">{{ room.unreadCount }}</span>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

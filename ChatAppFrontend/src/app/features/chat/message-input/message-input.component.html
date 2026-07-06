@@ -1,0 +1,19 @@
+<div class="message-input-container">
+  <div class="message-input-wrapper">
+    <textarea
+      class="message-textarea"
+      placeholder="Type a message... (Enter to send)"
+      [(ngModel)]="message"
+      (input)="onInput()"
+      (keydown)="onKeyDown($event)"
+      rows="1"
+    ></textarea>
+    <button
+      class="send-btn"
+      (click)="send()"
+      [disabled]="!message.trim()"
+      title="Send message">
+      ➤
+    </button>
+  </div>
+</div>

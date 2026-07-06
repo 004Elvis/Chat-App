@@ -1,0 +1,77 @@
+<div class="chat-window">
+  <!-- Header -->
+  <div class="chat-header">
+    <button class="btn-icon back-btn" (click)="backClicked.emit()">
+      ←
+    </button>
+    <div class="room-avatar-sm">
+      {{ getInitials(room.name) }}
+    </div>
+    <div class="chat-header-info">
+      <h3 class="chat-header-name">{{ room.name }}</h3>
+      <span class="chat-header-members">
+        {{ room.members.length || 0 }} members
+      </span>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div class="messages-container">
+    @if (messages.length === 0) {
+      <div class="no-messages">
+        <span>👋</span>
+        <p>No messages yet. Say hello!</p>
+      </div>
+    }
+
+    @for (message of messages; track message.id; let i = $index) {
+      <!-- Date separator -->
+      @if (showDateSeparator(i)) {
+        <div class="date-separator">
+          <span>{{ formatDate(message.sentAt) }}</span>
+        </div>
+      }
+
+      <!-- Message bubble -->
+      <div class="message-wrapper"
+        [class.message-own]="isOwnMessage(message)">
+
+        @if (!isOwnMessage(message)) {
+          <div class="avatar avatar-sm">
+            {{ getInitials(message.senderUserName) }}
+          </div>
+        }
+
+        <div class="message-content">
+          @if (showSenderName(i, message)) {
+            <span class="message-sender">{{ message.senderUserName }}</span>
+          }
+          <div class="message-bubble"
+            [class.bubble-own]="isOwnMessage(message)"
+            [class.bubble-deleted]="message.isDeleted">
+            {{ message.isDeleted ? 'This message was deleted' : message.content }}
+          </div>
+          <span class="message-time">{{ formatTime(message.sentAt) }}</span>
+        </div>
+      </div>
+    }
+
+    <!-- Typing indicator -->
+    @if (typingText) {
+      <div class="typing-indicator">
+        <div class="typing-dots">
+          <span></span><span></span><span></span>
+        </div>
+        <span class="typing-text">{{ typingText }}</span>
+      </div>
+    }
+
+    <div #messagesEnd></div>
+  </div>
+
+  <!-- Message input -->
+  <app-message-input
+    (messageSent)="onSendMessage($event)"
+    (typingChanged)="onTyping($event)"
+  />
+</div>

@@ -1,0 +1,35 @@
+<div class="chat-layout">
+  <!-- Sidebar -->
+  <aside class="chat-sidebar" [class.sidebar-hidden]="!showSidebar()">
+    <app-chat-room-list
+      [rooms]="rooms()"
+      [selectedRoom]="selectedRoom()"
+      [currentUser]="authService.currentUser()"
+      (roomSelected)="selectRoom($event)"
+      (roomCreated)="createRoom($event)"
+      (logoutClicked)="logout()"
+    />
+  </aside>
+
+  <!-- Main chat area -->
+  <main class="chat-main" [class.main-hidden]="showSidebar() && !selectedRoom()">
+    @if (selectedRoom()) {
+      <app-chat-window
+        [room]="selectedRoom()!"
+        [messages]="messages()"
+        [currentUser]="authService.currentUser()"
+        [typingUsers]="signalRService.typingUsers$ | async"
+        [signalRService]="signalRService"
+        (backClicked)="showRoomList()"
+      />
+    } @else {
+      <div class="no-room-selected">
+        <div class="no-room-content">
+          <span class="no-room-icon">💬</span>
+          <h2>Welcome to ChatApp</h2>
+          <p>Select a room from the sidebar or create a new one to start chatting.</p>
+        </div>
+      </div>
+    }
+  </main>
+</div>
