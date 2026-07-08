@@ -28,19 +28,22 @@ export class ChatComponent implements OnInit, OnDestroy {
     private chatService: ChatService
   ) {}
 
-  async ngOnInit(): Promise<void> {
-    await this.signalRService.startConnection();
-    this.loadRooms();
+ async ngOnInit(): Promise<void> {
+  await this.signalRService.startConnection();
+  this.loadRooms();
 
-    this.signalRService.messages$.subscribe(messages => {
-      if (this.selectedRoom()) {
-        const roomMessages = messages.filter(
-          m => m.chatRoomId === this.selectedRoom()!.id
-        );
-        this.messages.set(roomMessages);
+  this.signalRService.messages$.subscribe(messages => {
+    const currentRoom = this.selectedRoom();
+    if (currentRoom && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.chatRoomId === currentRoom.id) {
+        this.messages.set(messages.filter(
+          m => m.chatRoomId === currentRoom.id
+        ));
       }
-    });
-  }
+    }
+  });
+}
 
   async ngOnDestroy(): Promise<void> {
     await this.signalRService.stopConnection();
@@ -57,25 +60,30 @@ export class ChatComponent implements OnInit, OnDestroy {
   }
 
   async selectRoom(room: ChatRoom): Promise<void> {
-    if (this.selectedRoom()) {
-      await this.signalRService.leaveRoom(this.selectedRoom()!.id);
-    }
-
-    this.selectedRoom.set(room);
-    this.signalRService.clearMessages();
-    this.messages.set([]);
-
-    await this.signalRService.joinRoom(room.id);
-
-    this.chatService.getMessages(room.id).subscribe(messages => {
-      this.messages.set(messages.reverse());
-      this.signalRService.messages$.next(messages.reverse());
-    });
-
-    if (window.innerWidth < 768) {
-      this.showSidebar.set(false);
-    }
+  if (this.selectedRoom()) {
+    await this.signalRService.leaveRoom(this.selectedRoom()!.id);
   }
+
+  this.signalRService.clearMessages();
+  this.messages.set([]);
+
+  // Reload full room details to get updated member count
+  this.chatService.getRoom(room.id).subscribe(fullRoom => {
+    this.selectedRoom.set(fullRoom);
+  });
+
+  await this.signalRService.joinRoom(room.id);
+
+  this.chatService.getMessages(room.id).subscribe(messages => {
+    const reversed = [...messages].reverse();
+    this.messages.set(reversed);
+    this.signalRService.messages$.next(reversed);
+  });
+
+  if (window.innerWidth < 768) {
+    this.showSidebar.set(false);
+  }
+}
 
   showRoomList(): void {
     this.showSidebar.set(true);

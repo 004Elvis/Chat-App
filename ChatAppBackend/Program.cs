@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,10 +48,12 @@ builder.Services.AddAuthentication(options =>
         OnMessageReceived = context =>
         {
             var accessToken = context.Request.Query["access_token"];
+
+            // If the request is for our hub...
             var path = context.HttpContext.Request.Path;
-            if (!string.IsNullOrEmpty(accessToken) &&
-                path.StartsWithSegments("/chathub"))
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chathub"))
             {
+                // Read the token out of the query string
                 context.Token = accessToken;
             }
             return Task.CompletedTask;
@@ -61,6 +64,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<IUserIdProvider, UserIdProvider>();
 builder.Services.AddOpenApi();
 
 // CORS — allow Angular dev server
@@ -90,5 +94,12 @@ app.MapControllers();
 
 // Map SignalR hub
 app.MapHub<ChatHub>("/chathub");
+
+// TEMP: Test endpoint to verify hub is reachable
+app.MapPost("/api/test-message", async (ApplicationDbContext db) =>
+{
+    var count = await db.Messages.CountAsync();
+    return Results.Ok(new { messageCount = count, status = "db connected" });
+});
 
 app.Run();

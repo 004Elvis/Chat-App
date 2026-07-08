@@ -95,10 +95,11 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
   }
 
   async onSendMessage(content: string): Promise<void> {
-    if (content.trim() && this.room) {
-      await this.signalRService.sendMessage(this.room.id, content);
-    }
+  console.log('Sending message to room:', this.room?.id, 'content:', content);
+  if (content.trim() && this.room) {
+    await this.signalRService.sendMessage(this.room.id, content);
   }
+}
 
   async onTyping(isTyping: boolean): Promise<void> {
     if (isTyping) {

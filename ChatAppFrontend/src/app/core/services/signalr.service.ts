@@ -15,24 +15,26 @@ export class SignalRService {
   constructor(private authService: AuthService) {}
 
   async startConnection(): Promise<void> {
-    const token = this.authService.getToken();
+  const token = this.authService.getToken();
+  console.log('SignalR token exists:', !!token);
 
-    this.hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl('http://localhost:5082/chathub', {
-        accessTokenFactory: () => token || ''
-      })
-      .withAutomaticReconnect()
-      .build();
+  this.hubConnection = new signalR.HubConnectionBuilder()
+    .withUrl(`http://localhost:5082/chathub?access_token=${token}`, {
+      transport: signalR.HttpTransportType.WebSockets,
+      skipNegotiation: true
+    })
+    .withAutomaticReconnect()
+    .build();
 
-    this.registerHandlers();
+  this.registerHandlers();
 
-    try {
-      await this.hubConnection.start();
-      console.log('SignalR connected');
-    } catch (err) {
-      console.error('SignalR connection error:', err);
-    }
+  try {
+    await this.hubConnection.start();
+    console.log('SignalR connected');
+  } catch (err) {
+    console.error('SignalR connection error:', err);
   }
+}
 
   async stopConnection(): Promise<void> {
     if (this.hubConnection) {
@@ -54,10 +56,12 @@ export class SignalRService {
   }
 
   async sendMessage(roomId: number, content: string): Promise<void> {
-    if (this.hubConnection) {
-      await this.hubConnection.invoke('SendMessage', roomId, content);
-    }
+  console.log('SignalR sendMessage called - roomId:', roomId, 'content:', content);
+  console.log('Hub connection state:', this.hubConnection?.state);
+  if (this.hubConnection) {
+    await this.hubConnection.invoke('SendMessage', roomId, content);
   }
+}
 
   async startTyping(roomId: number): Promise<void> {
     if (this.hubConnection) {

@@ -8,12 +8,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ChatAppBackend.Hubs
 {
-    [Authorize]
+    
     public class ChatHub : Hub
     {
         private readonly ApplicationDbContext _context;
 
-        // Track online users: userId -> connectionId
         private static readonly Dictionary<string, string> OnlineUsers = new();
 
         public ChatHub(ApplicationDbContext context)
@@ -21,32 +20,26 @@ namespace ChatAppBackend.Hubs
             _context = context;
         }
 
-        // Called automatically when a user connects
         public override async Task OnConnectedAsync()
         {
             var userId = GetUserId();
             var userName = GetUserName();
 
-            // Track connection
             OnlineUsers[userId] = Context.ConnectionId;
 
-            // Join all rooms this user belongs to
             var roomIds = await _context.ChatRoomMembers
-                .Where(m => m.UserId == Guid.Parse(userId))
-                .Select(m => m.ChatRoomId)
-                .ToListAsync();
+    .Where(m => m.UserId == Guid.Parse(userId))
+    .Select(m => m.ChatRoomId)
+    .ToListAsync();
 
             foreach (var roomId in roomIds)
                 await Groups.AddToGroupAsync(
                     Context.ConnectionId, roomId.ToString());
 
-            // Notify others this user is online
             await Clients.Others.SendAsync("UserOnline", userId, userName);
-
             await base.OnConnectedAsync();
         }
 
-        // Called automatically when a user disconnects
         public override async Task OnDisconnectedAsync(Exception? exception)
         {
             var userId = GetUserId();
@@ -54,7 +47,6 @@ namespace ChatAppBackend.Hubs
 
             OnlineUsers.Remove(userId);
 
-            // Update last seen
             var user = await _context.Users.FindAsync(Guid.Parse(userId));
             if (user != null)
             {
@@ -62,65 +54,60 @@ namespace ChatAppBackend.Hubs
                 await _context.SaveChangesAsync();
             }
 
-            // Notify others this user is offline
             await Clients.Others.SendAsync("UserOffline", userId, userName);
-
             await base.OnDisconnectedAsync(exception);
         }
 
-        // Client calls this to send a message
-        public async Task SendMessage(int roomId, string content,
-            string messageType = "Text")
-        {
-            var userId = Guid.Parse(GetUserId());
+      public async Task SendMessage(int roomId, string content)
+    
+{
+    string messageType = "Text";
+    Console.WriteLine($"=== SEND MESSAGE: room={roomId} content={content} ===");
 
-            // Verify sender is a member of the room
-            var isMember = await _context.ChatRoomMembers
-                .AnyAsync(m => m.ChatRoomId == roomId && m.UserId == userId);
+    var userIdStr = GetUserId();
+    Console.WriteLine($"=== USER ID: {userIdStr} ===");
 
-            if (!isMember)
-            {
-                await Clients.Caller.SendAsync("Error",
-                    "You are not a member of this room.");
-                return;
-            }
+    if (userIdStr == "UNKNOWN")
+    {
+        await Clients.Caller.SendAsync("Error", "Not authenticated");
+        return;
+    }
 
-            // Save message to database
-            var message = new Message
-            {
-                ChatRoomId = roomId,
-                SenderId = userId,
-                Content = content,
-                MessageType = messageType,
-                SentAt = DateTime.UtcNow,
-                IsDeleted = false
-            };
+    var userId = Guid.Parse(userIdStr);
 
-            _context.Messages.Add(message);
-            await _context.SaveChangesAsync();
+    var message = new Message
+    {
+        ChatRoomId = roomId,
+        SenderId = userId,
+        Content = content,
+        MessageType = messageType,
+        SentAt = DateTime.UtcNow,
+        IsDeleted = false
+    };
 
-            // Load sender details for the DTO
-            var sender = await _context.Users.FindAsync(userId);
+    _context.Messages.Add(message);
+    await _context.SaveChangesAsync();
 
-            var messageDto = new MessageDto
-            {
-                Id = message.Id,
-                ChatRoomId = message.ChatRoomId,
-                SenderId = message.SenderId,
-                SenderUserName = sender!.UserName,
-                SenderAvatarUrl = sender.AvatarUrl,
-                Content = message.Content,
-                MessageType = message.MessageType,
-                SentAt = message.SentAt,
-                IsDeleted = false
-            };
+    var sender = await _context.Users.FindAsync(userId);
 
-            // Broadcast to everyone in the room (including sender)
-            await Clients.Group(roomId.ToString())
-                .SendAsync("ReceiveMessage", messageDto);
-        }
+    var messageDto = new MessageDto
+    {
+        Id = message.Id,
+        ChatRoomId = message.ChatRoomId,
+        SenderId = message.SenderId,
+        SenderUserName = sender?.UserName ?? "Unknown",
+        SenderAvatarUrl = sender?.AvatarUrl,
+        Content = message.Content,
+        MessageType = message.MessageType,
+        SentAt = message.SentAt,
+        IsDeleted = false
+    };
 
-        // Client calls this to join a specific room
+    await Clients.Group(roomId.ToString())
+        .SendAsync("ReceiveMessage", messageDto);
+
+    Console.WriteLine($"=== MESSAGE SAVED AND BROADCAST ===");
+}
         public async Task JoinRoom(int roomId)
         {
             var userId = Guid.Parse(GetUserId());
@@ -137,7 +124,6 @@ namespace ChatAppBackend.Hubs
                 .SendAsync("UserJoined", roomId, GetUserId(), GetUserName());
         }
 
-        // Client calls this to leave a room
         public async Task LeaveRoom(int roomId)
         {
             await Groups.RemoveFromGroupAsync(
@@ -147,21 +133,18 @@ namespace ChatAppBackend.Hubs
                 .SendAsync("UserLeft", roomId, GetUserId(), GetUserName());
         }
 
-        // Client calls this when user starts typing
         public async Task StartTyping(int roomId)
         {
             await Clients.OthersInGroup(roomId.ToString())
                 .SendAsync("UserTyping", roomId, GetUserName());
         }
 
-        // Client calls this when user stops typing
         public async Task StopTyping(int roomId)
         {
             await Clients.OthersInGroup(roomId.ToString())
                 .SendAsync("UserStoppedTyping", roomId, GetUserName());
         }
 
-        // Client calls this to mark messages as read
         public async Task MarkAsRead(int roomId, int messageId)
         {
             var userId = Guid.Parse(GetUserId());
@@ -179,14 +162,19 @@ namespace ChatAppBackend.Hubs
                 .SendAsync("MessageRead", roomId, messageId, GetUserId());
         }
 
-        // Helper: get current user ID from JWT claims
-        private string GetUserId() =>
-            Context.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? throw new HubException("User not authenticated.");
+        // Updated to try multiple claim types
+        private string GetUserId()
+{
+    return Context.User?.FindFirstValue(ClaimTypes.NameIdentifier)
+        ?? Context.User?.FindFirstValue("sub")
+        ?? Context.User?.FindFirstValue("nameid")
+        ?? Context.UserIdentifier
+        ?? "UNKNOWN";
+}
 
-        // Helper: get current username from JWT claims
         private string GetUserName() =>
             Context.User?.FindFirstValue(ClaimTypes.Name)
+            ?? Context.User?.FindFirstValue("name")
             ?? throw new HubException("User not authenticated.");
     }
 }
