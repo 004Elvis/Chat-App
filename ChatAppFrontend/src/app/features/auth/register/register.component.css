@@ -1,0 +1,48 @@
+.strength-meter {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.strength-bars {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.strength-bar {
+  height: 4px;
+  flex: 1;
+  border-radius: 2px;
+  transition: background 0.3s ease;
+}
+
+.strength-label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  min-width: 80px;
+  text-align: right;
+  transition: color 0.3s ease;
+}
+
+.strength-checklist {
+  list-style: none;
+  margin-top: var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.strength-checklist li {
+  font-size: 0.75rem;
+  transition: color 0.2s ease;
+}
+
+.check-passed {
+  color: #22c55e;
+}
+
+.check-failed {
+  color: var(--text-secondary);
+}

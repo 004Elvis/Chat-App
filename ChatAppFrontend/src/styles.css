@@ -72,6 +72,20 @@ html, body {
   overflow: hidden;
 }
 
+/* Allow auth pages to scroll */
+.auth-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: var(--spacing-xl) var(--spacing-md);
+}
+
 body {
   font-family: var(--font-family);
   font-size: var(--font-size-base);
@@ -219,10 +233,11 @@ a:hover { color: var(--primary-dark); }
 .auth-container {
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: var(--spacing-md);
+  padding: var(--spacing-xl) var(--spacing-md);
+  overflow-y: auto;
 }
 
 .auth-card {
