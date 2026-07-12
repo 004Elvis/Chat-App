@@ -14,12 +14,24 @@
         <label class="form-label">Username</label>
         <input
           class="form-input"
+          [class.input-error]="usernameError()"
+          [class.input-success]="isUsernameValid && userName"
           type="text"
-          placeholder="Choose a username"
+          placeholder="letters, numbers, _ or - only"
           [(ngModel)]="userName"
           name="userName"
+          (input)="validateUsername()"
           required
         />
+        @if (usernameError()) {
+          <span class="form-error">{{ usernameError() }}</span>
+        }
+        @if (isUsernameValid && userName) {
+          <span class="form-success">✓ Username looks good</span>
+        }
+        <span class="form-hint">
+          3–20 characters. Letters, numbers, _ and - only. No spaces.
+        </span>
       </div>
 
       <div class="form-group">
@@ -49,7 +61,7 @@
       <button
         type="submit"
         class="btn btn-primary"
-        [disabled]="loading()">
+        [disabled]="loading() || !isUsernameValid">
         @if (loading()) {
           <span class="spinner"></span>
         } @else {

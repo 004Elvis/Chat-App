@@ -373,3 +373,23 @@ a:hover { color: var(--primary-dark); }
     border-radius: var(--border-radius-sm);
   }
 }
+/* Input states */
+.input-error {
+  border-color: var(--danger) !important;
+}
+
+.input-success {
+  border-color: var(--success) !important;
+}
+
+.form-success {
+  font-size: var(--font-size-sm);
+  color: var(--success);
+  margin-top: 2px;
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}

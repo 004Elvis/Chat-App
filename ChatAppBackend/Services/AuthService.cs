@@ -27,27 +27,28 @@ namespace ChatAppBackend.Services
         }
 
         public async Task<AuthResponseDto?> RegisterAsync(RegisterDto dto)
-        {
-            // Check if email or username already exists
-            bool exists = await _context.Users.AnyAsync(u =>
-                u.Email == dto.Email || u.UserName == dto.UserName);
+{
+    // Case-insensitive check for existing email or username
+    bool exists = await _context.Users.AnyAsync(u =>
+        u.Email.ToLower() == dto.Email.ToLower() ||
+        u.UserName.ToLower() == dto.UserName.ToLower());
 
-            if (exists) return null;
+    if (exists) return null;
 
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                UserName = dto.UserName,
-                Email = dto.Email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                CreatedAt = DateTime.UtcNow
-            };
+    var user = new User
+    {
+        Id = Guid.NewGuid(),
+        UserName = dto.UserName,
+        Email = dto.Email.ToLower(),
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+        CreatedAt = DateTime.UtcNow
+    };
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+    _context.Users.Add(user);
+    await _context.SaveChangesAsync();
 
-            return GenerateAuthResponse(user);
-        }
+    return GenerateAuthResponse(user);
+}
 
         public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
         {
