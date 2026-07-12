@@ -18,6 +18,7 @@ export class RegisterComponent {
   error = signal('');
   loading = signal(false);
   usernameError = signal('');
+  showPassword = signal(false);
 
   constructor(private authService: AuthService, private router: Router) {}
 
@@ -61,7 +62,6 @@ export class RegisterComponent {
     ];
 
     const score = checks.filter(c => c.passed).length;
-
     let label = '';
     let color = '';
 

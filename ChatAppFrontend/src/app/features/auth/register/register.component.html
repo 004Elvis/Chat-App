@@ -10,7 +10,6 @@
     }
 
     <form (ngSubmit)="onSubmit()">
-      <!-- Username -->
       <div class="form-group">
         <label class="form-label">Username</label>
         <input
@@ -35,7 +34,6 @@
         </span>
       </div>
 
-      <!-- Email -->
       <div class="form-group">
         <label class="form-label">Email</label>
         <input
@@ -48,43 +46,45 @@
         />
       </div>
 
-      <!-- Password -->
       <div class="form-group">
         <label class="form-label">Password</label>
-        <input
-          class="form-input"
-          [class.input-error]="password && !isPasswordStrong"
-          [class.input-success]="password && isPasswordStrong"
-          type="password"
-          placeholder="Create a strong password"
-          [(ngModel)]="password"
-          name="password"
-          required
-        />
+        <div class="password-wrapper">
+          <input
+            class="form-input"
+            [class.input-error]="password && !isPasswordStrong"
+            [class.input-success]="password && isPasswordStrong"
+            [type]="showPassword() ? 'text' : 'password'"
+            placeholder="Create a strong password"
+            [(ngModel)]="password"
+            name="password"
+            required
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="showPassword.set(!showPassword())"
+            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
+            {{ showPassword() ? '🙈' : '👁️' }}
+          </button>
+        </div>
 
-        <!-- Strength meter -->
         @if (password) {
           <div class="strength-meter">
             <div class="strength-bars">
               @for (i of [1,2,3,4,5]; track i) {
-                <div
-                  class="strength-bar"
-                  [style.background]="i <= passwordStrength.score
-                    ? passwordStrength.color : '#e5e7eb'">
+                <div class="strength-bar"
+                  [style.background]="i <= passwordStrength.score ? passwordStrength.color : '#e5e7eb'">
                 </div>
               }
             </div>
-            <span class="strength-label"
-              [style.color]="passwordStrength.color">
+            <span class="strength-label" [style.color]="passwordStrength.color">
               {{ passwordStrength.label }}
             </span>
           </div>
 
-          <!-- Checklist -->
           <ul class="strength-checklist">
             @for (check of passwordStrength.checks; track check.label) {
-              <li [class.check-passed]="check.passed"
-                  [class.check-failed]="!check.passed">
+              <li [class.check-passed]="check.passed" [class.check-failed]="!check.passed">
                 {{ check.passed ? '✓' : '○' }} {{ check.label }}
               </li>
             }

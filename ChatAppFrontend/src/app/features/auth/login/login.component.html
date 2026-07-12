@@ -24,14 +24,23 @@
 
       <div class="form-group">
         <label class="form-label">Password</label>
-        <input
-          class="form-input"
-          type="password"
-          placeholder="Enter your password"
-          [(ngModel)]="password"
-          name="password"
-          required
-        />
+        <div class="password-wrapper">
+          <input
+            class="form-input"
+            [type]="showPassword() ? 'text' : 'password'"
+            placeholder="Enter your password"
+            [(ngModel)]="password"
+            name="password"
+            required
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="showPassword.set(!showPassword())"
+            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
+            {{ showPassword() ? '🙈' : '👁️' }}
+          </button>
+        </div>
       </div>
 
       <button
