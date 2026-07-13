@@ -438,3 +438,17 @@ a:hover { color: var(--primary-dark); }
 .password-toggle:hover {
   color: var(--primary);
 }
+.auth-success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--border-radius-sm);
+  padding: var(--spacing-md);
+  color: #16a34a;
+  text-align: center;
+  margin-bottom: var(--spacing-md);
+}
+.forgot-password-link {
+  text-align: right;
+  margin-bottom: var(--spacing-md);
+  font-size: var(--font-size-sm);
+}

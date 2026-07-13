@@ -10,3 +10,5 @@ appsettings.local.json
 .env
 .DS_Store
 Thumbs.db
+# Ignore local environment variables
+.env

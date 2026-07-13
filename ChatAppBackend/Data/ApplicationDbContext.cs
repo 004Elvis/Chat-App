@@ -14,6 +14,7 @@ namespace ChatAppBackend.Data
         public DbSet<ChatRoomMember> ChatRoomMembers { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<MessageAttachment> MessageAttachments { get; set; }
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

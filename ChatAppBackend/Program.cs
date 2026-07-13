@@ -7,8 +7,37 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Microsoft.AspNetCore.SignalR;
+using DotNetEnv;
+
+Env.Load(); //imediately loads the .env file
 
 var builder = WebApplication.CreateBuilder(args);
+
+//Inject the SendGrid key into your app configuration
+var sendGridKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY");
+if (!string.IsNullOrEmpty(sendGridKey))
+{
+    builder.Configuration["EmailSettings:SendGridApiKey"] = sendGridKey; //ensures that any dependency i have set up that binds EmailSettings will semalessly reveive the API  key from the .env file
+
+}
+
+var fromEmail = Environment.GetEnvironmentVariable("FROM_EMAIL");
+if (!string.IsNullOrEmpty(fromEmail))
+{
+    builder.Configuration["EmailSettings:FromEmail"] = fromEmail;
+}
+
+var fromName = Environment.GetEnvironmentVariable("FROM_NAME");
+if (!string.IsNullOrEmpty(fromName))
+{
+    builder.Configuration["EmailSettings:FromName"] = fromName;
+}
+
+var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL");
+if (!string.IsNullOrEmpty(frontendUrl))
+{
+    builder.Configuration["EmailSettings:FrontendUrl"] = frontendUrl;
+}
 
 // Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -18,6 +47,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IChatRoomService, ChatRoomService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
