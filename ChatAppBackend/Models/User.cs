@@ -7,6 +7,7 @@ namespace ChatAppBackend.Models
         public string Email { get; set; } = string.Empty;
         public string PasswordHash { get; set; } = string.Empty;
         public string? AvatarUrl { get; set; }
+        public bool IsEmailVerified { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? LastSeenAt { get; set; }
 

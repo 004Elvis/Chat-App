@@ -7,6 +7,8 @@ namespace ChatAppBackend.Services
     {
         Task SendPasswordResetEmailAsync(string toEmail,
             string userName, string resetLink);
+        Task SendVerificationEmailAsync(string toEmail,
+            string userName, string verifyLink);
     }
 
     public class EmailService : IEmailService
@@ -68,6 +70,51 @@ namespace ChatAppBackend.Services
 
     var responseBody = await response.Body.ReadAsStringAsync();
     Console.WriteLine($"=== EMAIL RESPONSE: {responseBody} ===");
+}
+
+     public async Task SendVerificationEmailAsync(
+    string toEmail, string userName, string verifyLink)
+{
+    var settings = _config.GetSection("EmailSettings");
+    var apiKey = settings["SendGridApiKey"];
+
+    Console.WriteLine($"=== VERIFICATION EMAIL: Sending to {toEmail} ===");
+    Console.WriteLine($"=== VERIFY LINK: {verifyLink} ===");
+
+    if (string.IsNullOrEmpty(apiKey))
+    {
+        Console.WriteLine("[ERROR] SendGrid API Key is completely empty in Configuration!");
+        return;
+    }
+
+    var client = new SendGridClient(apiKey);
+    var from = new EmailAddress(settings["FromEmail"], settings["FromName"]);
+    var to = new EmailAddress(toEmail, userName);
+    var subject = "Verify your ChatApp email";
+    var htmlContent = $@"
+        <div style='font-family: Arial, sans-serif; max-width: 600px;'>
+            <h2 style='color: #6c63ff;'>💬 ChatApp</h2>
+            <h3>Verify Your Email</h3>
+            <p>Hi {userName},</p>
+            <p>Thanks for signing up! Click the button below to confirm this is really your email address.</p>
+            <a href='{verifyLink}'
+               style='display:inline-block; padding:12px 24px;
+                      background:#6c63ff; color:white;
+                      text-decoration:none; border-radius:8px;
+                      margin:16px 0;'>
+                Verify Email
+            </a>
+            <p>This link expires in <strong>24 hours</strong>.</p>
+            <p>If you didn't create this account, you can safely ignore this email.</p>
+        </div>";
+
+    var msg = MailHelper.CreateSingleEmail(from, to, subject, null, htmlContent);
+    var response = await client.SendEmailAsync(msg);
+
+    Console.WriteLine($"=== VERIFICATION EMAIL STATUS: {response.StatusCode} ===");
+
+    var responseBody = await response.Body.ReadAsStringAsync();
+    Console.WriteLine($"=== VERIFICATION EMAIL RESPONSE: {responseBody} ===");
 }
     }
 }

@@ -1,0 +1,29 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <h1>💬 ChatApp</h1>
+    </div>
+
+    @if (status() === 'checking') {
+      <p>Verifying your email...</p>
+    }
+
+    @if (status() === 'success') {
+      <div class="auth-error" style="background:#dcfce7; color:#166534;">
+        ✓ {{ message() }}
+      </div>
+      <p style="margin-top:16px;">
+        <a routerLink="/chat">Continue to ChatApp</a>
+      </p>
+    }
+
+    @if (status() === 'error') {
+      <div class="auth-error">
+        {{ message() }}
+      </div>
+      <p style="margin-top:16px;">
+        <a routerLink="/chat">Back to ChatApp</a>
+      </p>
+    }
+  </div>
+</div>

@@ -14,4 +14,5 @@ export interface AuthResponse {
   userName: string;
   userId: string;
   avatarUrl?: string;
+  isEmailVerified: boolean;
 }

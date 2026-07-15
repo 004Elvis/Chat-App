@@ -6,5 +6,6 @@ namespace ChatAppBackend.DTOs.Auth
         public string UserName { get; set; } = string.Empty;
         public Guid UserId { get; set; }
         public string? AvatarUrl { get; set; }
+        public bool IsEmailVerified { get; set; }
     }
 }

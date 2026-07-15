@@ -2,6 +2,7 @@ using ChatAppBackend.DTOs.Auth;
 using ChatAppBackend.Services;
 using ChatAppBackend.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using ChatAppBackend.Data;
 using Microsoft.EntityFrameworkCore;
 using BCrypt.Net;
@@ -59,6 +60,10 @@ public async Task<IActionResult> Register([FromBody] RegisterDto dto)
 
     if (result == null)
         return BadRequest(new { message = "Registration failed. Please try again." });
+
+    // Fire off an email verification link. This never blocks account
+    // creation or login - it's a soft reminder, not a hard gate.
+    await SendVerificationEmailToUserAsync(result.UserId);
 
     return Ok(result);
 }
@@ -143,6 +148,80 @@ public async Task<IActionResult> ResetPassword(
         "Password reset successfully. You can now log in." });
 }
 
+[HttpGet("verify-email")]
+public async Task<IActionResult> VerifyEmail([FromQuery] string token)
+{
+    var verificationToken = await _context.EmailVerificationTokens
+        .Include(t => t.User)
+        .FirstOrDefaultAsync(t =>
+            t.Token == token &&
+            !t.IsUsed &&
+            t.ExpiresAt > DateTime.UtcNow);
+
+    if (verificationToken == null)
+        return BadRequest(new { message =
+            "Invalid or expired verification link." });
+
+    verificationToken.User.IsEmailVerified = true;
+    verificationToken.IsUsed = true;
+
+    await _context.SaveChangesAsync();
+
+    return Ok(new { message = "Email verified successfully!" });
+}
+
+[Authorize]
+[HttpPost("resend-verification")]
+public async Task<IActionResult> ResendVerification()
+{
+    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+        ?? User.FindFirst("sub")?.Value;
+
+    if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
+        return Unauthorized();
+
+    var user = await _context.Users.FindAsync(userId);
+    if (user == null)
+        return NotFound();
+
+    if (user.IsEmailVerified)
+        return Ok(new { message = "Your email is already verified." });
+
+    await SendVerificationEmailToUserAsync(user.Id);
+
+    return Ok(new { message = "Verification email sent." });
+}
+
+private async Task SendVerificationEmailToUserAsync(Guid userId)
+{
+    var user = await _context.Users.FindAsync(userId);
+    if (user == null || user.IsEmailVerified) return;
+
+    // Invalidate any existing unused tokens for this user
+    var existingTokens = _context.EmailVerificationTokens
+        .Where(t => t.UserId == user.Id && !t.IsUsed);
+    _context.EmailVerificationTokens.RemoveRange(existingTokens);
+
+    var token = Convert.ToBase64String(Guid.NewGuid().ToByteArray())
+        .Replace("/", "_").Replace("+", "-").Replace("=", "");
+
+    _context.EmailVerificationTokens.Add(new EmailVerificationToken
+    {
+        UserId = user.Id,
+        Token = token,
+        ExpiresAt = DateTime.UtcNow.AddHours(24),
+        IsUsed = false
+    });
+
+    await _context.SaveChangesAsync();
+
+    var frontendUrl = _config["EmailSettings:FrontendUrl"];
+    var verifyLink = $"{frontendUrl}/verify-email?token={token}";
+
+    await _emailService.SendVerificationEmailAsync(
+        user.Email, user.UserName, verifyLink);
+}
+
 [HttpPost("google")]
 public async Task<IActionResult> GoogleLogin([FromBody] GoogleAuthDto dto)
 {
@@ -194,6 +273,7 @@ public async Task<IActionResult> GoogleLogin([FromBody] GoogleAuthDto dto)
                 PasswordHash = BCrypt.Net.BCrypt
                     .HashPassword(Guid.NewGuid().ToString()),
                 AvatarUrl = payload.Picture,
+                IsEmailVerified = true,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -242,7 +322,8 @@ private AuthResponseDto BuildAuthResponse(User user)
         Token = new JwtSecurityTokenHandler().WriteToken(token),
         UserName = user.UserName,
         UserId = user.Id,
-        AvatarUrl = user.AvatarUrl
+        AvatarUrl = user.AvatarUrl,
+        IsEmailVerified = user.IsEmailVerified
     };
 }
     }

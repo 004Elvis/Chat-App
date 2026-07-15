@@ -12,8 +12,6 @@ export class AuthService {
   private readonly TOKEN_KEY = 'chat_token';
   private readonly USER_KEY = 'chat_user';
 
-  
-
   currentUser = signal<User | null>(this.getStoredUser());
 
   constructor(private http: HttpClient, private router: Router) {}
@@ -51,7 +49,8 @@ export class AuthService {
     id: response.userId,
     userName: response.userName,
     email: '',
-    avatarUrl: response.avatarUrl
+    avatarUrl: response.avatarUrl,
+    isEmailVerified: response.isEmailVerified
   };
   localStorage.setItem(this.USER_KEY, JSON.stringify(user));
   this.currentUser.set(user);
@@ -64,4 +63,22 @@ export class AuthService {
   googleLogin(idToken: string) {
   return this.http.post<any>(`${environment.apiUrl}/auth/google`, { idToken });
 }
+
+  verifyEmail(token: string): Observable<{ message: string }> {
+    return this.http.get<{ message: string }>(`${this.API}/verify-email`, {
+      params: { token }
+    });
+  }
+
+  resendVerification(): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.API}/resend-verification`, {});
+  }
+
+  markEmailVerified(): void {
+    const user = this.currentUser();
+    if (!user) return;
+    const updated: User = { ...user, isEmailVerified: true };
+    localStorage.setItem(this.USER_KEY, JSON.stringify(updated));
+    this.currentUser.set(updated);
+  }
 }

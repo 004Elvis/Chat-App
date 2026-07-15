@@ -74,7 +74,8 @@ namespace ChatAppBackend.Services
                 Token = token,
                 UserName = user.UserName,
                 UserId = user.Id,
-                AvatarUrl = user.AvatarUrl
+                AvatarUrl = user.AvatarUrl,
+                IsEmailVerified = user.IsEmailVerified
             };
         }
 
