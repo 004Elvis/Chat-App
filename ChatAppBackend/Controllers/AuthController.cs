@@ -167,9 +167,16 @@ public async Task<IActionResult> GoogleLogin([FromBody] GoogleAuthDto dto)
             userName = System.Text.RegularExpressions.Regex
                 .Replace(userName, @"[^a-zA-Z0-9_-]", "_");
 
-            // Ensure username is unique
-            var baseUserName = userName.Length > 20
-                ? userName.Substring(0, 20) : userName;
+            // Enforce the same 3-20 character rule as manual registration.
+            // Pad short names (e.g. "jo" from jo@gmail.com) so they clear
+            // the 3-char minimum used by RegisterDto's validation.
+            if (userName.Length < 3)
+                userName = userName.PadRight(3, '0');
+
+            // Reserve room for a numeric suffix (up to 3 digits) so that
+            // "baseUserName{suffix}" can never exceed the 20-char max.
+            var baseUserName = userName.Length > 17
+                ? userName.Substring(0, 17) : userName;
             userName = baseUserName;
             int suffix = 1;
             while (await _context.Users.AnyAsync(u =>

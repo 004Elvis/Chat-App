@@ -21,6 +21,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
   loading = signal(false);
   usernameError = signal('');
   showPassword = signal(false);
+  private usernameTouched = false;
 
   private authSubscription!: Subscription;
 
@@ -38,7 +39,6 @@ export class RegisterComponent implements OnInit, OnDestroy {
 
         this.authService.googleLogin(user.idToken).subscribe({
           next: (res) => {
-            // Assuming your authService handles storing the token, or you navigate directly
             this.router.navigate(['/chat']);
           },
           error: (err) => {
@@ -59,6 +59,28 @@ export class RegisterComponent implements OnInit, OnDestroy {
     if (this.authSubscription) {
       this.authSubscription.unsubscribe();
     }
+  }
+
+  onUsernameKeydown(): void {
+  this.usernameTouched = true;
+}
+
+  onEmailInput(): void {
+  if (this.usernameTouched) return;
+
+    const prefix = this.email.split('@')[0] || '';
+    if (!prefix) {
+      this.userName = '';
+      this.validateUsername();
+      return;
+    }
+
+    let suggestion = prefix.replace(/[^a-zA-Z0-9_-]/g, '_');
+    if (suggestion.length < 3) suggestion = suggestion.padEnd(3, '0');
+    if (suggestion.length > 20) suggestion = suggestion.substring(0, 20);
+
+    this.userName = suggestion;
+    this.validateUsername();
   }
 
   validateUsername(): void {

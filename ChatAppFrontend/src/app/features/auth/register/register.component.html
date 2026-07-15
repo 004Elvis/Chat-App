@@ -13,16 +13,17 @@
       <div class="form-group">
         <label class="form-label">Username</label>
         <input
-          class="form-input"
-          [class.input-error]="usernameError()"
-          [class.input-success]="isUsernameValid && userName"
-          type="text"
-          placeholder="letters, numbers, _ or - only"
-          [(ngModel)]="userName"
-          name="userName"
-          (input)="validateUsername()"
-          required
-        />
+  class="form-input"
+  [class.input-error]="usernameError()"
+  [class.input-success]="isUsernameValid && userName"
+  type="text"
+  placeholder="letters, numbers, _ or - only"
+  [(ngModel)]="userName"
+  name="userName"
+  (keydown)="onUsernameKeydown()"
+  (input)="validateUsername()"
+  required
+/>
         @if (usernameError()) {
           <span class="form-error">{{ usernameError() }}</span>
         }
@@ -42,6 +43,7 @@
           placeholder="Enter your email"
           [(ngModel)]="email"
           name="email"
+          (input)="onEmailInput()"
           required
         />
       </div>
