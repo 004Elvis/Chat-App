@@ -4,12 +4,15 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { AuthResponse, LoginDto, RegisterDto } from '../models/auth.model';
 import { User } from '../models/user.model';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly API = 'http://localhost:5082/api/auth';
+  private readonly API = `${environment.apiUrl}/auth`;
   private readonly TOKEN_KEY = 'chat_token';
   private readonly USER_KEY = 'chat_user';
+
+  
 
   currentUser = signal<User | null>(this.getStoredUser());
 
@@ -58,4 +61,7 @@ export class AuthService {
     const stored = localStorage.getItem(this.USER_KEY);
     return stored ? JSON.parse(stored) : null;
   }
+  googleLogin(idToken: string) {
+  return this.http.post<any>(`${environment.apiUrl}/auth/google`, { idToken });
+}
 }

@@ -452,3 +452,37 @@ a:hover { color: var(--primary-dark); }
   margin-bottom: var(--spacing-md);
   font-size: var(--font-size-sm);
 }
+/* Center and space out the Google sign-in container */
+.google-btn-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+/*Clean styling for the "OR" line */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0 1rem 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.auth-divider:not(:empty)::before {
+  margin-right: .75em;
+}
+
+.auth-divider:not(:empty)::after {
+  margin-left: .75em;
+}

@@ -21,6 +21,18 @@ if (!string.IsNullOrEmpty(sendGridKey))
 
 }
 
+var googleClientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
+if (!string.IsNullOrEmpty(googleClientId))
+{
+    builder.Configuration["GoogleAuth:ClientId"] = googleClientId;
+}
+
+var googleClientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET");
+if (!string.IsNullOrEmpty(googleClientSecret))
+{
+    builder.Configuration["GoogleAuth:ClientSecret"] = googleClientSecret;
+}
+
 var fromEmail = Environment.GetEnvironmentVariable("FROM_EMAIL");
 if (!string.IsNullOrEmpty(fromEmail))
 {
@@ -79,7 +91,7 @@ builder.Services.AddAuthentication(options =>
         {
             var accessToken = context.Request.Query["access_token"];
 
-            // If the request is for our hub...
+            // If the request is for the hub that ia ma using
             var path = context.HttpContext.Request.Path;
             if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chathub"))
             {
@@ -89,6 +101,13 @@ builder.Services.AddAuthentication(options =>
             return Task.CompletedTask;
         }
     };
+})
+          //Google OAuth
+.AddGoogle(options =>
+{
+    options.ClientId = builder.Configuration["GoogleAuth:ClientId"]!;
+    options.ClientSecret = builder.Configuration["GoogleAuth:ClientSecret"]!;
+     options.CallbackPath = "/signin-google";
 });
 
 builder.Services.AddAuthorization();

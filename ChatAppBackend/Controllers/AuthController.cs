@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using ChatAppBackend.Data;
 using Microsoft.EntityFrameworkCore;
 using BCrypt.Net;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
 
 namespace ChatAppBackend.Controllers
 {
@@ -137,6 +141,102 @@ public async Task<IActionResult> ResetPassword(
 
     return Ok(new { message =
         "Password reset successfully. You can now log in." });
+}
+
+[HttpPost("google")]
+public async Task<IActionResult> GoogleLogin([FromBody] GoogleAuthDto dto)
+{
+    try
+    {
+        // Verify the Google ID token
+        var payload = await Google.Apis.Auth.GoogleJsonWebSignature
+            .ValidateAsync(dto.IdToken, new Google.Apis.Auth
+                .GoogleJsonWebSignature.ValidationSettings
+            {
+                Audience = new[] { _config["GoogleAuth:ClientId"] }
+            });
+
+        // Check if user already exists
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.Email == payload.Email.ToLower());
+
+        if (user == null)
+        {
+            // Create new user from Google account
+            var userName = payload.Email.Split('@')[0];
+            userName = System.Text.RegularExpressions.Regex
+                .Replace(userName, @"[^a-zA-Z0-9_-]", "_");
+
+            // Ensure username is unique
+            var baseUserName = userName.Length > 20
+                ? userName.Substring(0, 20) : userName;
+            userName = baseUserName;
+            int suffix = 1;
+            while (await _context.Users.AnyAsync(u =>
+                u.UserName.ToLower() == userName.ToLower()))
+            {
+                userName = $"{baseUserName}{suffix}";
+                suffix++;
+            }
+
+            user = new User
+            {
+                Id = Guid.NewGuid(),
+                UserName = userName,
+                Email = payload.Email.ToLower(),
+                PasswordHash = BCrypt.Net.BCrypt
+                    .HashPassword(Guid.NewGuid().ToString()),
+                AvatarUrl = payload.Picture,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+        }
+
+        user.LastSeenAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(BuildAuthResponse(user));
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Google auth error: {ex.Message}");
+        return Unauthorized(new { message = "Invalid Google token." });
+    }
+}
+
+private AuthResponseDto BuildAuthResponse(User user)
+{
+    var jwtSettings = _config.GetSection("JwtSettings");
+    var key = new SymmetricSecurityKey(
+        Encoding.UTF8.GetBytes(jwtSettings["SecretKey"]!));
+
+    var claims = new[]
+    {
+        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+        new Claim("sub", user.Id.ToString()),
+        new Claim("nameid", user.Id.ToString()),
+        new Claim(ClaimTypes.Name, user.UserName),
+        new Claim(ClaimTypes.Email, user.Email)
+    };
+
+    var token = new JwtSecurityToken(
+        issuer: jwtSettings["Issuer"],
+        audience: jwtSettings["Audience"],
+        claims: claims,
+        expires: DateTime.UtcNow.AddDays(7),
+        signingCredentials: new SigningCredentials(
+            key, SecurityAlgorithms.HmacSha256)
+    );
+
+    return new AuthResponseDto
+    {
+        Token = new JwtSecurityTokenHandler().WriteToken(token),
+        UserName = user.UserName,
+        UserId = user.Id,
+        AvatarUrl = user.AvatarUrl
+    };
 }
     }
 }
