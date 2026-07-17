@@ -1,67 +1,15 @@
 .chat-layout {
   display: flex;
-  flex-direction: column;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
   background: var(--bg);
 }
 
-.chat-body {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.verify-banner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 16px;
-  background: #fef3c7;
-  color: #92400e;
-  font-size: 0.9rem;
-  flex-shrink: 0;
-}
-
-.verify-banner-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.verify-banner-actions button {
-  border: none;
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-
-.verify-banner-actions button:first-child {
-  background: #92400e;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 6px;
-}
-
-.verify-banner-actions button:first-child:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-
-.verify-banner-dismiss {
-  background: transparent;
-  color: #92400e;
-  padding: 4px 8px;
-  font-size: 1rem;
-}
-
 .chat-sidebar {
   width: var(--sidebar-width);
   min-width: var(--sidebar-width);
-  height: 100%;
+  height: 100vh;
   background: var(--sidebar-bg);
   display: flex;
   flex-direction: column;
@@ -71,7 +19,7 @@
 
 .chat-main {
   flex: 1;
-  height: 100%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;

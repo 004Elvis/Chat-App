@@ -1,25 +1,4 @@
 <div class="chat-layout">
-  @if (authService.currentUser()?.isEmailVerified === false && !bannerDismissed()) {
-    <div class="verify-banner">
-      <span>
-        📧 Please verify your email address.
-        @if (verificationResendMessage()) {
-          <strong>{{ verificationResendMessage() }}</strong>
-        }
-      </span>
-      <div class="verify-banner-actions">
-        <button
-          type="button"
-          [disabled]="resendingVerification()"
-          (click)="resendVerificationEmail()">
-          @if (resendingVerification()) { Sending... } @else { Resend email }
-        </button>
-        <button type="button" class="verify-banner-dismiss" (click)="dismissVerificationBanner()">✕</button>
-      </div>
-    </div>
-  }
-
-  <div class="chat-body">
   <!-- Sidebar -->
   <aside class="chat-sidebar" [class.sidebar-hidden]="!showSidebar()">
     <app-chat-room-list
@@ -53,5 +32,4 @@
       </div>
     }
   </main>
-  </div>
 </div>

@@ -16,17 +16,20 @@ import { Subscription } from 'rxjs';
 export class RegisterComponent implements OnInit, OnDestroy {
   userName = '';
   email = '';
-  password = '';
   error = signal('');
   loading = signal(false);
   usernameError = signal('');
-  showPassword = signal(false);
   private usernameTouched = false;
+
+  // Post-submit state: switches the form over to a "check your email" screen.
+  submitted = signal(false);
+  resending = signal(false);
+  resendMessage = signal('');
 
   private authSubscription!: Subscription;
 
   constructor(
-    private authService: AuthService, 
+    private authService: AuthService,
     private router: Router,
     private socialAuthService: SocialAuthService
   ) {}
@@ -38,7 +41,7 @@ export class RegisterComponent implements OnInit, OnDestroy {
         this.error.set('');
 
         this.authService.googleLogin(user.idToken).subscribe({
-          next: (res) => {
+          next: () => {
             this.router.navigate(['/chat']);
           },
           error: (err) => {
@@ -62,11 +65,11 @@ export class RegisterComponent implements OnInit, OnDestroy {
   }
 
   onUsernameKeydown(): void {
-  this.usernameTouched = true;
-}
+    this.usernameTouched = true;
+  }
 
   onEmailInput(): void {
-  if (this.usernameTouched) return;
+    if (this.usernameTouched) return;
 
     const prefix = this.email.split('@')[0] || '';
     if (!prefix) {
@@ -107,50 +110,13 @@ export class RegisterComponent implements OnInit, OnDestroy {
       /^[a-zA-Z0-9_-]+$/.test(this.userName);
   }
 
-  get passwordStrength(): {
-    score: number;
-    label: string;
-    color: string;
-    checks: { label: string; passed: boolean }[]
-  } {
-    const p = this.password;
-    const checks = [
-      { label: 'At least 8 characters', passed: p.length >= 8 },
-      { label: 'Uppercase letter (A–Z)', passed: /[A-Z]/.test(p) },
-      { label: 'Lowercase letter (a–z)', passed: /[a-z]/.test(p) },
-      { label: 'Number (0–9)', passed: /[0-9]/.test(p) },
-      { label: 'Special character (!@#$...)', passed: /[^a-zA-Z0-9]/.test(p) }
-    ];
-
-    const score = checks.filter(c => c.passed).length;
-    let label = '';
-    let color = '';
-
-    if (p.length === 0) { label = ''; color = ''; }
-    else if (score <= 1) { label = 'Very Weak'; color = '#ef4444'; }
-    else if (score === 2) { label = 'Weak'; color = '#f97316'; }
-    else if (score === 3) { label = 'Fair'; color = '#eab308'; }
-    else if (score === 4) { label = 'Strong'; color = '#22c55e'; }
-    else { label = 'Very Strong'; color = '#16a34a'; }
-
-    return { score, label, color, checks };
-  }
-
-  get isPasswordStrong(): boolean {
-    return this.passwordStrength.score >= 3;
-  }
-
   onSubmit(): void {
-    if (!this.userName || !this.email || !this.password) {
+    if (!this.userName || !this.email) {
       this.error.set('Please fill in all fields.');
       return;
     }
     if (!this.isUsernameValid) {
       this.error.set('Please fix the username errors before submitting.');
-      return;
-    }
-    if (!this.isPasswordStrong) {
-      this.error.set('Please choose a stronger password.');
       return;
     }
 
@@ -159,10 +125,12 @@ export class RegisterComponent implements OnInit, OnDestroy {
 
     this.authService.register({
       userName: this.userName,
-      email: this.email,
-      password: this.password
+      email: this.email
     }).subscribe({
-      next: () => this.router.navigate(['/chat']),
+      next: () => {
+        this.loading.set(false);
+        this.submitted.set(true);
+      },
       error: (err) => {
         let message = 'Registration failed. Please try again.';
         if (err.error) {
@@ -171,6 +139,22 @@ export class RegisterComponent implements OnInit, OnDestroy {
         }
         this.error.set(message);
         this.loading.set(false);
+      }
+    });
+  }
+
+  resendLink(): void {
+    this.resending.set(true);
+    this.resendMessage.set('');
+
+    this.authService.resendRegistrationLink(this.email).subscribe({
+      next: (res) => {
+        this.resendMessage.set(res.message || 'Link sent.');
+        this.resending.set(false);
+      },
+      error: () => {
+        this.resendMessage.set('Could not resend right now. Please try again shortly.');
+        this.resending.set(false);
       }
     });
   }

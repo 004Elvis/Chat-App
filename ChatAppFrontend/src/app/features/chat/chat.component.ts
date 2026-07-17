@@ -21,9 +21,6 @@ export class ChatComponent implements OnInit, OnDestroy {
   messages = signal<Message[]>([]);
   loading = signal(true);
   showSidebar = signal(true);
-  resendingVerification = signal(false);
-  verificationResendMessage = signal('');
-  bannerDismissed = signal(false);
 
   constructor(
     public authService: AuthService,
@@ -100,26 +97,6 @@ export class ChatComponent implements OnInit, OnDestroy {
         this.selectRoom(room);
       }
     });
-  }
-
-  resendVerificationEmail(): void {
-    this.resendingVerification.set(true);
-    this.verificationResendMessage.set('');
-
-    this.authService.resendVerification().subscribe({
-      next: (res) => {
-        this.verificationResendMessage.set(res.message || 'Verification email sent.');
-        this.resendingVerification.set(false);
-      },
-      error: () => {
-        this.verificationResendMessage.set('Could not send email. Please try again shortly.');
-        this.resendingVerification.set(false);
-      }
-    });
-  }
-
-  dismissVerificationBanner(): void {
-    this.bannerDismissed.set(true);
   }
 
   logout(): void {

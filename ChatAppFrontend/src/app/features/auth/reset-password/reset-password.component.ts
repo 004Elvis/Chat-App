@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-reset-password',
@@ -13,7 +14,9 @@ import { CommonModule } from '@angular/common';
 export class ResetPasswordComponent implements OnInit {
   token = '';
   newPassword = '';
+  confirmPassword = '';
   showPassword = signal(false);
+  showConfirmPassword = signal(false);
   error = signal('');
   success = signal(false);
   loading = signal(false);
@@ -44,18 +47,31 @@ export class ResetPasswordComponent implements OnInit {
     return score;
   }
 
+  get passwordsMatch(): boolean {
+    return this.confirmPassword.length > 0 && this.confirmPassword === this.newPassword;
+  }
+
+  get showMismatch(): boolean {
+    return this.confirmPassword.length > 0 && this.confirmPassword !== this.newPassword;
+  }
+
   onSubmit(): void {
     if (!this.newPassword || this.passwordScore < 3) {
       this.error.set('Please choose a stronger password.');
+      return;
+    }
+    if (!this.passwordsMatch) {
+      this.error.set('Passwords do not match.');
       return;
     }
 
     this.loading.set(true);
     this.error.set('');
 
-    this.http.post('http://localhost:5082/api/auth/reset-password', {
+    this.http.post(`${environment.apiUrl}/auth/reset-password`, {
       token: this.token,
-      newPassword: this.newPassword
+      newPassword: this.newPassword,
+      confirmPassword: this.confirmPassword
     }).subscribe({
       next: () => {
         this.success.set(true);

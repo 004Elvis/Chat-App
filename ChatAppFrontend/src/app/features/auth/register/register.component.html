@@ -1,11 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ChatApp</title>
-</head>
-<body>
 <div class="auth-container">
   <div class="auth-card">
     <div class="auth-logo">
@@ -13,121 +5,105 @@
       <p>Create your account to get started.</p>
     </div>
 
-    @if (error()) {
-      <div class="auth-error">{{ error() }}</div>
-    }
-
-    <form (ngSubmit)="onSubmit()">
-      <div class="form-group">
-        <label class="form-label">Username</label>
-        <input
-  class="form-input"
-  [class.input-error]="usernameError()"
-  [class.input-success]="isUsernameValid && userName"
-  type="text"
-  placeholder="letters, numbers, _ or - only"
-  [(ngModel)]="userName"
-  name="userName"
-  (keydown)="onUsernameKeydown()"
-  (input)="validateUsername()"
-  required
-/>
-        @if (usernameError()) {
-          <span class="form-error">{{ usernameError() }}</span>
-        }
-        @if (isUsernameValid && userName) {
-          <span class="form-success">✓ Username looks good</span>
-        }
-        <span class="form-hint">
-          3–20 characters. Letters, numbers, _ and - only. No spaces.
-        </span>
+    @if (submitted()) {
+      <div class="auth-success">
+        <p>✅ Almost there!</p>
+        <p>We've sent a link to <strong>{{ email }}</strong> to confirm your email and set your password.</p>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Email</label>
-        <input
-          class="form-input"
-          type="email"
-          placeholder="Enter your email"
-          [(ngModel)]="email"
-          name="email"
-          (input)="onEmailInput()"
-          required
-        />
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <div class="password-wrapper">
-          <input
-            class="form-input"
-            [class.input-error]="password && !isPasswordStrong"
-            [class.input-success]="password && isPasswordStrong"
-            [type]="showPassword() ? 'text' : 'password'"
-            placeholder="Create a strong password"
-            [(ngModel)]="password"
-            name="password"
-            required
-          />
-          <button
-            type="button"
-            class="password-toggle"
-            (click)="showPassword.set(!showPassword())"
-            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
-            {{ showPassword() ? '🙈' : '👁️' }}
-          </button>
-        </div>
-
-        @if (password) {
-          <div class="strength-meter">
-            <div class="strength-bars">
-              @for (i of [1,2,3,4,5]; track i) {
-                <div class="strength-bar"
-                  [style.background]="i <= passwordStrength.score ? passwordStrength.color : '#e5e7eb'">
-                </div>
-              }
-            </div>
-            <span class="strength-label" [style.color]="passwordStrength.color">
-              {{ passwordStrength.label }}
-            </span>
-          </div>
-
-          <ul class="strength-checklist">
-            @for (check of passwordStrength.checks; track check.label) {
-              <li [class.check-passed]="check.passed" [class.check-failed]="!check.passed">
-                {{ check.passed ? '✓' : '○' }} {{ check.label }}
-              </li>
-            }
-          </ul>
-        }
-      </div>
+      @if (resendMessage()) {
+        <p class="form-hint" style="margin-top:8px;">{{ resendMessage() }}</p>
+      }
 
       <button
-        type="submit"
+        type="button"
         class="btn btn-primary"
-        [disabled]="loading() || !isUsernameValid || !isPasswordStrong">
-        @if (loading()) {
+        style="margin-top:16px;"
+        [disabled]="resending()"
+        (click)="resendLink()">
+        @if (resending()) {
           <span class="spinner"></span>
         } @else {
-          Create Account
+          Resend link
         }
       </button>
-    </form>
 
-  <!---Google Button--->
-    <div class="auth-divider">
-      <span>OR</span>
-    </div>
+      <div class="auth-footer" style="margin-top:16px;">
+        Already have an account?
+        <a routerLink="/login">Sign in</a>
+      </div>
+    } @else {
+      @if (error()) {
+        <div class="auth-error">{{ error() }}</div>
+      }
 
-    <div class="google-btn-wrapper">
-      <asl-google-signin-button type="standard" size="large" text="continue_with"></asl-google-signin-button>
-    </div>
+      <form (ngSubmit)="onSubmit()">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input
+            class="form-input"
+            [class.input-error]="usernameError()"
+            [class.input-success]="isUsernameValid && userName"
+            type="text"
+            placeholder="letters, numbers, _ or - only"
+            [(ngModel)]="userName"
+            name="userName"
+            (keydown)="onUsernameKeydown()"
+            (input)="validateUsername()"
+            required
+          />
+          @if (usernameError()) {
+            <span class="form-error">{{ usernameError() }}</span>
+          }
+          @if (isUsernameValid && userName) {
+            <span class="form-success">✓ Username looks good</span>
+          }
+          <span class="form-hint">
+            3–20 characters. Letters, numbers, _ and - only. No spaces.
+          </span>
+        </div>
 
-    <div class="auth-footer">
-      Already have an account?
-      <a routerLink="/login">Sign in</a>
-    </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input
+            class="form-input"
+            type="email"
+            placeholder="Enter your email"
+            [(ngModel)]="email"
+            name="email"
+            (input)="onEmailInput()"
+            required
+          />
+          <span class="form-hint">
+            We'll email you a link to confirm this address and set your password.
+          </span>
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="loading() || !isUsernameValid">
+          @if (loading()) {
+            <span class="spinner"></span>
+          } @else {
+            Continue
+          }
+        </button>
+      </form>
+
+      <!---Google Button--->
+      <div class="auth-divider">
+        <span>OR</span>
+      </div>
+
+      <div class="google-btn-wrapper">
+        <asl-google-signin-button type="standard" size="large" text="continue_with"></asl-google-signin-button>
+      </div>
+
+      <div class="auth-footer">
+        Already have an account?
+        <a routerLink="/login">Sign in</a>
+      </div>
+    }
   </div>
 </div>
-</body>
-</html>

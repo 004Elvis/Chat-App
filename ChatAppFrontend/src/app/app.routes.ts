@@ -39,10 +39,10 @@ export const routes: Routes = [
       .then(m => m.ResetPasswordComponent)
 },
 {
-  path: 'verify-email',
+  path: 'set-password',
   loadComponent: () =>
-    import('./features/auth/verify-email/verify-email.component')
-      .then(m => m.VerifyEmailComponent)
+    import('./features/auth/set-password/set-password.component')
+      .then(m => m.SetPasswordComponent)
 },
   {
     path: '**',

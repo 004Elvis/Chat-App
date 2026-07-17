@@ -6,7 +6,12 @@ export interface LoginDto {
 export interface RegisterDto {
   userName: string;
   email: string;
-  password: string;
+}
+
+export interface SetPasswordDto {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 export interface AuthResponse {

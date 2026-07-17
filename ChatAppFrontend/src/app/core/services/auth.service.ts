@@ -2,7 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
-import { AuthResponse, LoginDto, RegisterDto } from '../models/auth.model';
+import { AuthResponse, LoginDto, RegisterDto, SetPasswordDto } from '../models/auth.model';
 import { User } from '../models/user.model';
 import { environment } from '../../../environments/environment';
 
@@ -16,8 +16,23 @@ export class AuthService {
 
   constructor(private http: HttpClient, private router: Router) {}
 
-  register(dto: RegisterDto): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.API}/register`, dto).pipe(
+  // Kicks off signup: username + email only. No login happens here -
+  // the account isn't usable until the person sets a password via the
+  // emailed link (see setPassword below).
+  register(dto: RegisterDto): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.API}/register`, dto);
+  }
+
+  resendRegistrationLink(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.API}/resend-registration-link`, { email }
+    );
+  }
+
+  // Completes signup: validates the emailed token, sets the real
+  // password, marks the email verified, and logs the person in.
+  setPassword(dto: SetPasswordDto): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(`${this.API}/set-password`, dto).pipe(
       tap(response => this.handleAuthResponse(response))
     );
   }
@@ -44,41 +59,24 @@ export class AuthService {
   }
 
   private handleAuthResponse(response: AuthResponse): void {
-  localStorage.setItem(this.TOKEN_KEY, response.token);
-  const user: User = {
-    id: response.userId,
-    userName: response.userName,
-    email: '',
-    avatarUrl: response.avatarUrl,
-    isEmailVerified: response.isEmailVerified
-  };
-  localStorage.setItem(this.USER_KEY, JSON.stringify(user));
-  this.currentUser.set(user);
-}
+    localStorage.setItem(this.TOKEN_KEY, response.token);
+    const user: User = {
+      id: response.userId,
+      userName: response.userName,
+      email: '',
+      avatarUrl: response.avatarUrl,
+      isEmailVerified: response.isEmailVerified
+    };
+    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    this.currentUser.set(user);
+  }
 
   private getStoredUser(): User | null {
     const stored = localStorage.getItem(this.USER_KEY);
     return stored ? JSON.parse(stored) : null;
   }
+
   googleLogin(idToken: string) {
-  return this.http.post<any>(`${environment.apiUrl}/auth/google`, { idToken });
-}
-
-  verifyEmail(token: string): Observable<{ message: string }> {
-    return this.http.get<{ message: string }>(`${this.API}/verify-email`, {
-      params: { token }
-    });
-  }
-
-  resendVerification(): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.API}/resend-verification`, {});
-  }
-
-  markEmailVerified(): void {
-    const user = this.currentUser();
-    if (!user) return;
-    const updated: User = { ...user, isEmailVerified: true };
-    localStorage.setItem(this.USER_KEY, JSON.stringify(updated));
-    this.currentUser.set(updated);
+    return this.http.post<any>(`${environment.apiUrl}/auth/google`, { idToken });
   }
 }
