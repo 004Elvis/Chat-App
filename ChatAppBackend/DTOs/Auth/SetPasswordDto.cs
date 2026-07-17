@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ChatAppBackend.DTOs.Auth
 {
-    public class ResetPasswordDto
+    public class SetPasswordDto
     {
         [Required]
         public string Token { get; set; } = string.Empty;

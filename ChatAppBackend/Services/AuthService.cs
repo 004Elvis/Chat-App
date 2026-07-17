@@ -11,7 +11,6 @@ namespace ChatAppBackend.Services
 {
     public interface IAuthService
     {
-        Task<AuthResponseDto?> RegisterAsync(RegisterDto dto);
         Task<AuthResponseDto?> LoginAsync(LoginDto dto);
     }
 
@@ -26,34 +25,10 @@ namespace ChatAppBackend.Services
             _config = config;
         }
 
-        public async Task<AuthResponseDto?> RegisterAsync(RegisterDto dto)
-{
-    // Case-insensitive check for existing email or username
-    bool exists = await _context.Users.AnyAsync(u =>
-        u.Email.ToLower() == dto.Email.ToLower() ||
-        u.UserName.ToLower() == dto.UserName.ToLower());
-
-    if (exists) return null;
-
-    var user = new User
-    {
-        Id = Guid.NewGuid(),
-        UserName = dto.UserName,
-        Email = dto.Email.ToLower(),
-        PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-        CreatedAt = DateTime.UtcNow
-    };
-
-    _context.Users.Add(user);
-    await _context.SaveChangesAsync();
-
-    return GenerateAuthResponse(user);
-}
-
         public async Task<AuthResponseDto?> LoginAsync(LoginDto dto)
         {
             var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Email == dto.Email);
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == dto.Email.ToLower());
 
             if (user == null) return null;
 

@@ -33,7 +33,7 @@ namespace ChatAppBackend.Controllers
 }
 
         [HttpPost("register")]
-public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+public async Task<IActionResult> Register([FromBody] InitiateRegistrationDto dto)
 {
     if (!ModelState.IsValid)
         return BadRequest(new {
@@ -43,29 +43,63 @@ public async Task<IActionResult> Register([FromBody] RegisterDto dto)
                 .FirstOrDefault() ?? "Invalid input."
         });
 
-    // Check username specifically first for a better error message
     bool usernameTaken = await _context.Users.AnyAsync(u =>
         u.UserName.ToLower() == dto.UserName.ToLower());
 
     if (usernameTaken)
         return BadRequest(new { message = "Username is already taken. Please choose another." });
 
-    bool emailTaken = await _context.Users.AnyAsync(u =>
-        u.Email.ToLower() == dto.Email.ToLower());
+    var existingUser = await _context.Users
+        .FirstOrDefaultAsync(u => u.Email.ToLower() == dto.Email.ToLower());
 
-    if (emailTaken)
-        return BadRequest(new { message = "An account with this email already exists." });
+    if (existingUser != null)
+    {
+        if (existingUser.IsEmailVerified)
+            return BadRequest(new { message = "An account with this email already exists." });
 
-    var result = await _authService.RegisterAsync(dto);
+        /* A previous signup for this email never finished link expired, Rather than blocking the users, just resend the
+        set-password link for the existing pending account.*/
+        await SendSetPasswordEmailToUserAsync(existingUser.Id);
+        return Ok(new { message =
+            "We've sent a link to your email to finish setting up your account." });
+    }
 
-    if (result == null)
-        return BadRequest(new { message = "Registration failed. Please try again." });
+    var user = new User
+    {
+        Id = Guid.NewGuid(),
+        UserName = dto.UserName,
+        Email = dto.Email.ToLower(),
+        // Unusable placeholder - nobody can log in until they set a real
+        // password via the emailed link, same trick used for Google users.
+        PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
+        IsEmailVerified = false,
+        CreatedAt = DateTime.UtcNow
+    };
 
-    // Fire off an email verification link. This never blocks account
-    // creation or login - it's a soft reminder, not a hard gate.
-    await SendVerificationEmailToUserAsync(result.UserId);
+    _context.Users.Add(user);
+    await _context.SaveChangesAsync();
 
-    return Ok(result);
+    await SendSetPasswordEmailToUserAsync(user.Id);
+
+    return Ok(new { message =
+        "Check your email for a link to confirm your address and set your password." });
+}
+
+[HttpPost("resend-registration-link")]
+public async Task<IActionResult> ResendRegistrationLink([FromBody] ForgotPasswordDto dto)
+{
+    var user = await _context.Users
+        .FirstOrDefaultAsync(u => u.Email.ToLower() == dto.Email.ToLower());
+
+    // Same enumeration-safe pattern as forgot-password: always return OK.
+    if (user == null || user.IsEmailVerified)
+        return Ok(new { message =
+            "If a pending signup exists for that email, we've sent a new link." });
+
+    await SendSetPasswordEmailToUserAsync(user.Id);
+
+    return Ok(new { message =
+        "If a pending signup exists for that email, we've sent a new link." });
 }
 
         [HttpPost("login")]
@@ -148,51 +182,32 @@ public async Task<IActionResult> ResetPassword(
         "Password reset successfully. You can now log in." });
 }
 
-[HttpGet("verify-email")]
-public async Task<IActionResult> VerifyEmail([FromQuery] string token)
+[HttpPost("set-password")]
+public async Task<IActionResult> SetPassword([FromBody] SetPasswordDto dto)
 {
     var verificationToken = await _context.EmailVerificationTokens
         .Include(t => t.User)
         .FirstOrDefaultAsync(t =>
-            t.Token == token &&
+            t.Token == dto.Token &&
             !t.IsUsed &&
             t.ExpiresAt > DateTime.UtcNow);
 
     if (verificationToken == null)
         return BadRequest(new { message =
-            "Invalid or expired verification link." });
+            "This link is invalid or has expired. Please sign up again or request a new link." });
 
-    verificationToken.User.IsEmailVerified = true;
+    var user = verificationToken.User;
+    user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+    user.IsEmailVerified = true;
     verificationToken.IsUsed = true;
 
     await _context.SaveChangesAsync();
 
-    return Ok(new { message = "Email verified successfully!" });
+    // Password is set and the email is confirmed - log them straight in.
+    return Ok(BuildAuthResponse(user));
 }
 
-[Authorize]
-[HttpPost("resend-verification")]
-public async Task<IActionResult> ResendVerification()
-{
-    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-        ?? User.FindFirst("sub")?.Value;
-
-    if (userIdClaim == null || !Guid.TryParse(userIdClaim, out var userId))
-        return Unauthorized();
-
-    var user = await _context.Users.FindAsync(userId);
-    if (user == null)
-        return NotFound();
-
-    if (user.IsEmailVerified)
-        return Ok(new { message = "Your email is already verified." });
-
-    await SendVerificationEmailToUserAsync(user.Id);
-
-    return Ok(new { message = "Verification email sent." });
-}
-
-private async Task SendVerificationEmailToUserAsync(Guid userId)
+private async Task SendSetPasswordEmailToUserAsync(Guid userId)
 {
     var user = await _context.Users.FindAsync(userId);
     if (user == null || user.IsEmailVerified) return;
@@ -216,10 +231,10 @@ private async Task SendVerificationEmailToUserAsync(Guid userId)
     await _context.SaveChangesAsync();
 
     var frontendUrl = _config["EmailSettings:FrontendUrl"];
-    var verifyLink = $"{frontendUrl}/verify-email?token={token}";
+    var setPasswordLink = $"{frontendUrl}/set-password?token={token}";
 
-    await _emailService.SendVerificationEmailAsync(
-        user.Email, user.UserName, verifyLink);
+    await _emailService.SendPasswordResetEmailAsync(
+        user.Email, user.UserName, setPasswordLink);
 }
 
 [HttpPost("google")]
@@ -248,7 +263,7 @@ public async Task<IActionResult> GoogleLogin([FromBody] GoogleAuthDto dto)
 
             // Enforce the same 3-20 character rule as manual registration.
             // Pad short names (e.g. "jo" from jo@gmail.com) so they clear
-            // the 3-char minimum used by RegisterDto's validation.
+            // the 3-char minimum used by InitiateRegistrationDto's validation.
             if (userName.Length < 3)
                 userName = userName.PadRight(3, '0');
 
@@ -326,5 +341,14 @@ private AuthResponseDto BuildAuthResponse(User user)
         IsEmailVerified = user.IsEmailVerified
     };
 }
+    }
+}
+
+namespace ChatAppBackend.DTOs.Auth
+{
+    public class InitiateRegistrationDto
+    {
+        public string UserName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
     }
 }
