@@ -2,10 +2,11 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { User } from '../models/user.model';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
-  private readonly API = 'http://localhost:5082/api';
+  private readonly API = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
@@ -24,6 +25,20 @@ export class UserService {
       `${this.API}/chatrooms/${roomId}/members`,
       JSON.stringify(userId),
       { headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+
+  uploadAvatar(file: File): Observable<{ avatarUrl: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ avatarUrl: string }>(
+      `${this.API}/users/me/avatar`, formData
+    );
+  }
+
+  updateUsername(userName: string): Observable<{ userName: string }> {
+    return this.http.put<{ userName: string }>(
+      `${this.API}/users/me/username`, { userName }
     );
   }
 }

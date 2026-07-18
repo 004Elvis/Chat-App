@@ -16,9 +16,7 @@ export class AuthService {
 
   constructor(private http: HttpClient, private router: Router) {}
 
-  // Kicks off signup: username + email only. No login happens here -
-  // the account isn't usable until the person sets a password via the
-  // emailed link (see setPassword below).
+  /* Kicks off signup: username + email only. No login happens here, the account isn't usable until the person sets a password via the emailed link (see setPassword below).*/
   register(dto: RegisterDto): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.API}/register`, dto);
   }
@@ -29,8 +27,8 @@ export class AuthService {
     );
   }
 
-  // Completes signup: validates the emailed token, sets the real
-  // password, marks the email verified, and logs the person in.
+  /* Completes signup: validates the emailed token, sets the real
+     password, marks the email verified, and logs the person in.*/
   setPassword(dto: SetPasswordDto): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.API}/set-password`, dto).pipe(
       tap(response => this.handleAuthResponse(response))
@@ -78,5 +76,15 @@ export class AuthService {
 
   googleLogin(idToken: string) {
     return this.http.post<any>(`${environment.apiUrl}/auth/google`, { idToken });
+  }
+
+  /* Patches the locally-held user (like after an avatar or username change)
+    without needing a fresh login.*/
+  updateCurrentUser(partial: Partial<User>): void {
+    const user = this.currentUser();
+    if (!user) return;
+    const updated: User = { ...user, ...partial };
+    localStorage.setItem(this.USER_KEY, JSON.stringify(updated));
+    this.currentUser.set(updated);
   }
 }

@@ -1,0 +1,73 @@
+<div class="modal-overlay" (click)="close()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Edit Profile</h2>
+      <button class="btn-icon" (click)="close()">✕</button>
+    </div>
+
+    <div class="avatar-section">
+      <div class="avatar-large">
+        @if (previewUrl()) {
+          <img [src]="previewUrl()" alt="preview" class="avatar-img" />
+        } @else if (currentUser?.avatarUrl) {
+          <img [src]="currentUser?.avatarUrl" alt="avatar" class="avatar-img" />
+        } @else {
+          {{ getInitials(currentUser?.userName || 'U') }}
+        }
+
+        @if (avatarUploading()) {
+          <div class="avatar-uploading-overlay">
+            <span class="spinner"></span>
+          </div>
+        }
+      </div>
+
+      <label class="btn btn-secondary avatar-upload-btn">
+        Change Photo
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          style="display:none"
+          (change)="onAvatarSelected($event)"
+        />
+      </label>
+
+      @if (avatarError()) {
+        <span class="form-error">{{ avatarError() }}</span>
+      }
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input
+        class="form-input"
+        [class.input-error]="usernameError()"
+        [class.input-success]="isUsernameValid && !isUnchanged"
+        type="text"
+        [(ngModel)]="userName"
+        name="userName"
+        (input)="validateUsername()"
+      />
+      @if (usernameError()) {
+        <span class="form-error">{{ usernameError() }}</span>
+      }
+      @if (usernameSuccess()) {
+        <span class="form-success">✓ {{ usernameSuccess() }}</span>
+      }
+      <span class="form-hint">
+        3–20 characters. Letters, numbers, _ and - only.
+      </span>
+    </div>
+
+    <button
+      class="btn btn-primary"
+      [disabled]="usernameSaving() || !isUsernameValid || isUnchanged"
+      (click)="saveUsername()">
+      @if (usernameSaving()) {
+        <span class="spinner"></span>
+      } @else {
+        Save Username
+      }
+    </button>
+  </div>
+</div>

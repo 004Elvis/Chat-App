@@ -1,11 +1,19 @@
 <div class="sidebar-header">
   <div class="sidebar-user">
     <div class="avatar">
-      {{ getInitials(currentUser?.userName || 'U') }}
+      @if (currentUser?.avatarUrl) {
+        <img [src]="currentUser?.avatarUrl" alt="avatar" class="avatar-img" />
+      } @else {
+        {{ getInitials(currentUser?.userName || 'U') }}
+      }
     </div>
     <span class="sidebar-username">{{ currentUser?.userName }}</span>
   </div>
   <div class="sidebar-actions">
+    <button class="btn-icon" title="Edit Profile"
+      (click)="showProfileModal.set(true)">
+      👤
+    </button>
     <button class="btn-icon" title="New Room"
       (click)="showCreateRoom.set(!showCreateRoom())">
       ✏️
@@ -22,6 +30,10 @@
     </button>
   </div>
 </div>
+
+@if (showProfileModal()) {
+   <app-profile-modal (closed)="showProfileModal.set(false)" /> 
+}
 
 <!-- Search rooms -->
 <div class="sidebar-search">
