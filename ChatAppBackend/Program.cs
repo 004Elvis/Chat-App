@@ -51,6 +51,24 @@ if (!string.IsNullOrEmpty(frontendUrl))
     builder.Configuration["EmailSettings:FrontendUrl"] = frontendUrl;
 }
 
+var cloudinaryCloudName = Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME");
+if (!string.IsNullOrEmpty(cloudinaryCloudName))
+{
+    builder.Configuration["CloudinarySettings:CloudName"] = cloudinaryCloudName;
+}
+
+var cloudinaryApiKey = Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY");
+if (!string.IsNullOrEmpty(cloudinaryApiKey))
+{
+    builder.Configuration["CloudinarySettings:ApiKey"] = cloudinaryApiKey;
+}
+
+var cloudinaryApiSecret = Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET");
+if (!string.IsNullOrEmpty(cloudinaryApiSecret))
+{
+    builder.Configuration["CloudinarySettings:ApiSecret"] = cloudinaryApiSecret;
+}
+
 // Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
@@ -60,6 +78,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IChatRoomService, ChatRoomService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
 // JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
