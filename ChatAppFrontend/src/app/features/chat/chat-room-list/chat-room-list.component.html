@@ -10,37 +10,32 @@
     <span class="sidebar-username">{{ currentUser?.userName }}</span>
   </div>
   <div class="sidebar-actions">
-    <button class="btn-icon" title="Edit Profile"
-      (click)="showProfileModal.set(true)">
-      👤
-    </button>
-    <button class="btn-icon" title="New Room"
+    <app-settings-menu></app-settings-menu>
+
+    <button class="btn-icon" title="Create Group"
       (click)="showCreateRoom.set(!showCreateRoom())">
-      ✏️
+      <app-icon name="create-group" [size]="20" class="icon-inverted"></app-icon>
     </button>
     @if (selectedRoom) {
       <button class="btn-icon" title="Add Member"
         (click)="showAddMember.set(!showAddMember())">
-        👥
+        <app-icon name="add-member" [size]="20" class="icon-inverted"></app-icon>
       </button>
     }
     <button class="btn-icon" title="Logout"
       (click)="logoutClicked.emit()">
-      🚪
+      <app-icon name="logout" [size]="20" class="icon-inverted"></app-icon>
     </button>
   </div>
 </div>
 
-@if (showProfileModal()) {
-   <app-profile-modal (closed)="showProfileModal.set(false)" /> 
-}
-
 <!-- Search rooms -->
 <div class="sidebar-search">
+  <app-icon name="search" [size]="16" class="search-icon icon-inverted"></app-icon>
   <input
     class="search-input"
     type="text"
-    placeholder="🔍 Search rooms..."
+    placeholder="Search rooms..."
     [(ngModel)]="searchQuery"
   />
 </div>
@@ -51,7 +46,7 @@
     <input
       class="form-input"
       type="text"
-      placeholder="Room name..."
+      placeholder="Group name..."
       [(ngModel)]="newRoomName"
       (keyup.enter)="createRoom()"
     />
@@ -82,10 +77,10 @@
     />
 
     @if (addMemberSuccess()) {
-      <p class="add-member-success">✅ {{ addMemberSuccess() }}</p>
+      <p class="add-member-success">{{ addMemberSuccess() }}</p>
     }
     @if (addMemberError()) {
-      <p class="add-member-error">❌ {{ addMemberError() }}</p>
+      <p class="add-member-error">{{ addMemberError() }}</p>
     }
 
     @if (searchResults().length > 0) {
@@ -93,7 +88,11 @@
         @for (user of searchResults(); track user.id) {
           <div class="search-result-item" (click)="addMember(user)">
             <div class="avatar avatar-sm">
-              {{ getInitials(user.userName) }}
+              @if (user.avatarUrl) {
+                <img [src]="user.avatarUrl" alt="avatar" class="avatar-img" />
+              } @else {
+                {{ getInitials(user.userName) }}
+              }
             </div>
             <div class="search-result-info">
               <span class="search-result-name">{{ user.userName }}</span>

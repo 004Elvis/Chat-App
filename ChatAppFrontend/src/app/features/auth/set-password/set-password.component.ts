@@ -3,11 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
+import { IconComponent } from '../../../core/components/icon/icon.component';
 
 @Component({
   selector: 'app-set-password',
   standalone: true,
-  imports: [FormsModule, RouterLink, CommonModule],
+  imports: [FormsModule, RouterLink, CommonModule, IconComponent],
   templateUrl: './set-password.component.html'
 })
 export class SetPasswordComponent implements OnInit {

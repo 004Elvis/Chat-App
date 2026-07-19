@@ -1,6 +1,4 @@
-/* ===========================
-   GLOBAL CSS VARIABLES
-=========================== */
+/* GLOBAL CSS VARIABLES */
 :root {
   /* Colors */
   --primary: #6c63ff;
@@ -55,11 +53,50 @@
   /* Layout */
   --sidebar-width: 320px;
   --header-height: 64px;
+
+  /* Semantic status colors (theme-aware) */
+  --danger-bg: #fef2f2;
+  --danger-border: #fecaca;
+  --danger-text: #b91c1c;
+  --success-bg: #f0fdf4;
+  --success-border: #bbf7d0;
+  --success-text: #16a34a;
+
+  /* Icons */
+  --icon-color: #4b5563;
+  --icon-color-inverted: #cdd6f4;
 }
 
-/* ===========================
-   RESET & BASE
-=========================== */
+/* DARK THEME OVERRIDES */
+[data-theme='dark'] {
+  --bg: #16161f;
+  --bg-white: #23232f;
+  --sidebar-bg: #1a1a24;
+  --sidebar-text: #cdd6f4;
+
+  --text-primary: #e4e4e7;
+  --text-secondary: #9ca3af;
+  --text-light: #ffffff;
+
+  --border: #34343f;
+
+  --danger-bg: #3a1c1c;
+  --danger-border: #5c2626;
+  --danger-text: #f87171;
+  --success-bg: #1c3a26;
+  --success-border: #266b3d;
+  --success-text: #4ade80;
+
+  --icon-color: #cdd6f4;
+  --icon-color-inverted: #cdd6f4;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+
+/* RESET & BASE */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -95,9 +132,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ===========================
-   TYPOGRAPHY
-=========================== */
+/* TYPOGRAPHY */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   line-height: 1.3;
@@ -114,9 +149,7 @@ a {
 
 a:hover { color: var(--primary-dark); }
 
-/* ===========================
-   SHARED BUTTON STYLES
-=========================== */
+/* SHARED BUTTON STYLES */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -185,9 +218,7 @@ a:hover { color: var(--primary-dark); }
   color: var(--primary);
 }
 
-/* ===========================
-   SHARED FORM STYLES
-=========================== */
+/* SHARED FORM STYLES */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -227,9 +258,7 @@ a:hover { color: var(--primary-dark); }
   margin-top: 2px;
 }
 
-/* ===========================
-   AUTH PAGE SHARED STYLES
-=========================== */
+/* AUTH PAGE SHARED STYLES */
 .auth-container {
   min-height: 100vh;
   display: flex;
@@ -279,19 +308,17 @@ a:hover { color: var(--primary-dark); }
 }
 
 .auth-error {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
   border-radius: var(--border-radius-sm);
   padding: var(--spacing-sm) var(--spacing-md);
-  color: var(--danger);
+  color: var(--danger-text);
   font-size: var(--font-size-sm);
   margin-bottom: var(--spacing-md);
   text-align: center;
 }
 
-/* ===========================
-   AVATAR
-=========================== */
+/* AVATAR */
 .avatar {
   width: 40px;
   height: 40px;
@@ -305,6 +332,7 @@ a:hover { color: var(--primary-dark); }
   font-size: var(--font-size-sm);
   flex-shrink: 0;
   text-transform: uppercase;
+  overflow: hidden;
 }
 
 .avatar-sm {
@@ -313,15 +341,20 @@ a:hover { color: var(--primary-dark); }
   font-size: 0.75rem;
 }
 
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--border-radius-full);
+  object-fit: cover;
+}
+
 .avatar-lg {
   width: 56px;
   height: 56px;
   font-size: var(--font-size-lg);
 }
 
-/* ===========================
-   ONLINE INDICATOR
-=========================== */
+/*ONLINE INDICATOR */
 .online-indicator {
   width: 10px;
   height: 10px;
@@ -333,9 +366,7 @@ a:hover { color: var(--primary-dark); }
   right: 0;
 }
 
-/* ===========================
-   LOADING SPINNER
-=========================== */
+/* LOADING SPINNER */
 .spinner {
   width: 24px;
   height: 24px;
@@ -349,9 +380,7 @@ a:hover { color: var(--primary-dark); }
   to { transform: rotate(360deg); }
 }
 
-/* ===========================
-   SCROLLBAR
-=========================== */
+/* SCROLLBAR */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
@@ -360,9 +389,7 @@ a:hover { color: var(--primary-dark); }
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
 
-/* ===========================
-   RESPONSIVE BREAKPOINTS
-=========================== */
+/* RESPONSIVE BREAKPOINTS */
 
 /* Tablet */
 @media (max-width: 768px) {
@@ -439,11 +466,11 @@ a:hover { color: var(--primary-dark); }
   color: var(--primary);
 }
 .auth-success {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: var(--success-bg);
+  border: 1px solid var(--success-border);
   border-radius: var(--border-radius-sm);
   padding: var(--spacing-md);
-  color: #16a34a;
+  color: var(--success-text);
   text-align: center;
   margin-bottom: var(--spacing-md);
 }
@@ -467,7 +494,7 @@ a:hover { color: var(--primary-dark); }
   align-items: center;
   text-align: center;
   margin: 1.5rem 0 1rem 0;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 0.875rem;
   font-weight: 500;
 }
@@ -486,9 +513,4 @@ a:hover { color: var(--primary-dark); }
 .auth-divider:not(:empty)::after {
   margin-left: .75em;
 }
-.avatar-img {
-  width: 100%;
-  height: 100%;
-  border-radius: var(--border-radius-full);
-  object-fit: cover;
-}
+

@@ -4,11 +4,12 @@ import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { GoogleSigninButtonModule, SocialAuthService } from '@abacritt/angularx-social-login';
 import { Subscription } from 'rxjs';
+import { IconComponent } from '../../../core/components/icon/icon.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule, RouterLink, GoogleSigninButtonModule],
+  imports: [FormsModule, RouterLink, GoogleSigninButtonModule, IconComponent],
   templateUrl: './login.component.html'
 })
 export class LoginComponent implements OnInit, OnDestroy {

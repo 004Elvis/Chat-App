@@ -9,11 +9,11 @@
       rows="1"
     ></textarea>
     <button
-      class="send-btn"
-      (click)="send()"
-      [disabled]="!message.trim()"
-      title="Send message">
-      ➤
-    </button>
+  class="send-btn"
+  (click)="send()"
+  [disabled]="!message.trim()"
+  title="Send message">
+  <app-icon name="send" [size]="18" class="icon-inverted"></app-icon>
+</button>
   </div>
 </div>

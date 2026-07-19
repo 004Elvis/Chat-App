@@ -2,7 +2,9 @@
   <div class="modal-card" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>Edit Profile</h2>
-      <button class="btn-icon" (click)="close()">✕</button>
+      <button class="btn-icon" (click)="close()">
+  <app-icon name="close" [size]="18"></app-icon>
+</button>
     </div>
 
     <div class="avatar-section">

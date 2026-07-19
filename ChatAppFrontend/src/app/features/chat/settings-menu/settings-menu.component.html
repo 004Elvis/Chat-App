@@ -1,0 +1,29 @@
+<div class="settings-wrapper">
+  <button class="btn-icon" title="Settings" (click)="toggleDropdown()">
+    <app-icon name="settings" [size]="20" class="icon-inverted"></app-icon>
+  </button>
+
+  @if (showDropdown()) {
+    <div class="dropdown-backdrop" (click)="closeDropdown()"></div>
+
+    <div class="settings-dropdown">
+      <button class="settings-item" (click)="openProfile()">
+        <app-icon name="edit-profile" [size]="18"></app-icon>
+        <span>Edit Profile</span>
+      </button>
+
+      <button class="settings-item" (click)="toggleTheme()">
+        <app-icon [name]="themeService.isDarkMode() ? 'sun' : 'moon'" [size]="18"></app-icon>
+        <span>{{ themeService.isDarkMode() ? 'Light Mode' : 'Dark Mode' }}</span>
+      </button>
+
+      <div class="settings-item settings-item-disabled">
+        <span>More settings coming soon</span>
+      </div>
+    </div>
+  }
+</div>
+
+@if (showProfileModal()) {
+  <app-profile-modal (closed)="showProfileModal.set(false)" />
+}

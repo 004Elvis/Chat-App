@@ -34,12 +34,12 @@
             required
           />
           <button
-            type="button"
-            class="password-toggle"
-            (click)="showPassword.set(!showPassword())"
-            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
-            {{ showPassword() ? '🙈' : '👁️' }}
-          </button>
+  type="button"
+  class="password-toggle"
+  (click)="showPassword.set(!showPassword())"
+  [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
+  <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" [size]="18"></app-icon>
+</button>
         </div>
       </div>
 

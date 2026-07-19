@@ -1,11 +1,12 @@
 import { Component, Output, EventEmitter, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { IconComponent } from '../../../core/components/icon/icon.component';
 
 @Component({
   selector: 'app-message-input',
   standalone: true,
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, IconComponent],
   templateUrl: './message-input.component.html',
   styleUrl: './message-input.component.css'
 })

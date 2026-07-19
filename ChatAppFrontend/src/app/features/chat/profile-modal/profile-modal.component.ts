@@ -3,11 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserService } from '../../../core/services/user.service';
+import { IconComponent } from '../../../core/components/icon/icon.component';
+
 
 @Component({
   selector: 'app-profile-modal',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, IconComponent],
   templateUrl: './profile-modal.component.html',
   styleUrl: './profile-modal.component.css'
 })

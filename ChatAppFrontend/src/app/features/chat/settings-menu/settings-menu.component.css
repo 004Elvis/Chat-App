@@ -1,0 +1,55 @@
+.settings-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+}
+
+.settings-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  background: var(--bg-white);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  z-index: 2000;
+  overflow: hidden;
+  padding: 6px;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.settings-item:hover {
+  background: var(--bg);
+}
+
+.settings-item-disabled {
+  color: var(--text-secondary);
+  cursor: default;
+  font-style: italic;
+}
+
+.settings-item-disabled:hover {
+  background: transparent;
+}

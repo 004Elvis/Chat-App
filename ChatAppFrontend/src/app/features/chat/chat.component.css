@@ -13,7 +13,6 @@
   background: var(--sidebar-bg);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   transition: var(--transition);
 }
 

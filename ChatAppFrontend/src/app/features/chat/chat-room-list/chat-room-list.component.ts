@@ -1,15 +1,17 @@
-import { Component, Input, Output, EventEmitter,signal, OnChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter,
+  signal, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChatRoom } from '../../../core/models/chat-room.model';
 import { User } from '../../../core/models/user.model';
 import { UserService } from '../../../core/services/user.service';
-import { ProfileModalComponent } from '../profile-modal/profile-modal.component';
+import { IconComponent } from '../../../core/components/icon/icon.component';
+import { SettingsMenuComponent } from '../settings-menu/settings-menu.component';
 
 @Component({
   selector: 'app-chat-room-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ProfileModalComponent],
+  imports: [CommonModule, FormsModule, IconComponent, SettingsMenuComponent],
   templateUrl: './chat-room-list.component.html',
   styleUrls: ['./chat-room-list.component.css']
 })
@@ -23,7 +25,6 @@ export class ChatRoomListComponent implements OnChanges {
 
   showCreateRoom = signal(false);
   showAddMember = signal(false);
-  showProfileModal = signal(false);
   newRoomName = '';
   searchQuery = '';
   memberSearchQuery = '';
