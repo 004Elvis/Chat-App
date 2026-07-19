@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 
 export type IconName =
   | 'settings' | 'edit-profile' | 'add-member' | 'create-group'
-  | 'logout' | 'sun' | 'moon' | 'eye' | 'eye-off' | 'search' | 'close' | 'send';
+  | 'logout' | 'sun' | 'moon' | 'eye' | 'eye-off' | 'search' | 'close' | 'send'
+  | 'new-chat';
 
 @Component({
   selector: 'app-icon',
@@ -89,7 +90,13 @@ export type IconName =
           <path d="M22 2L11 13"></path>
           <path d="M22 2l-7 20-4-9-9-4 20-7z"></path>
         }
-      }
+          @case ('new-chat') {
+           <path d="M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"></path>
+           <path d="M2 20a6.5 6.5 0 0 1 11.4-4.3"></path>
+           <path d="M15.5 13.5h5.5a1.5 1.5 0 0 1 1.5 1.5v3.5a1.5 1.5 0 0 1-1.5 1.5H18l-2.5 2.3V20h-1a1.5 1.5 0 0 1-1.5-1.5V15a1.5 1.5 0 0 1 1.5-1.5z"></path>
+        }
+        }
+      
     </svg>
   `,
   styles: [`

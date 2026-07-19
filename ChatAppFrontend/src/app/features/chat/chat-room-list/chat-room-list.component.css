@@ -121,6 +121,7 @@
   font-weight: 700;
   font-size: var(--font-size-sm);
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .room-info {
@@ -213,6 +214,11 @@
 
 .search-result-item:hover {
   background: rgba(108, 99, 255, 0.3);
+}
+
+.search-result-disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .search-result-info {

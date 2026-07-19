@@ -99,6 +99,14 @@ export class ChatComponent implements OnInit, OnDestroy {
     });
   }
 
+  onDmStarted(room: ChatRoom): void {
+  const exists = this.rooms().some(r => r.id === room.id);
+  if (!exists) {
+    this.rooms.update(rooms => [...rooms, room]);
+  }
+  this.selectRoom(room);
+}
+
   logout(): void {
     this.signalRService.stopConnection();
     this.authService.logout();

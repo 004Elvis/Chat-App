@@ -5,14 +5,20 @@
       ←
     </button>
     <div class="room-avatar-sm">
-      {{ getInitials(room.name) }}
-    </div>
-    <div class="chat-header-info">
-      <h3 class="chat-header-name">{{ room.name }}</h3>
-      <span class="chat-header-members">
-        {{ room.members.length || 0 }} members
-      </span>
-    </div>
+  @if (displayAvatar) {
+    <img [src]="displayAvatar" alt="avatar" class="avatar-img" />
+  } @else {
+    {{ getInitials(displayName) }}
+  }
+</div>
+<div class="chat-header-info">
+  <h3 class="chat-header-name">{{ displayName }}</h3>
+  @if (room.isGroup) {
+    <span class="chat-header-members">
+      {{ room.members.length || 0 }} members
+    </span>
+  }
+</div>
   </div>
 
   <!-- Messages -->

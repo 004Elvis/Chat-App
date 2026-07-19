@@ -50,8 +50,27 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
   }
 
   getInitials(name: string): string {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  return (name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+}
+
+getOtherMember(): User | null {
+  if (this.room.isGroup || !this.currentUser) return null;
+  return this.room.members.find(m => m.id !== this.currentUser!.id) || null;
+}
+
+get displayName(): string {
+  if (!this.room.isGroup) {
+    return this.getOtherMember()?.userName || 'Unknown User';
   }
+  return this.room.name;
+}
+
+get displayAvatar(): string | undefined {
+  if (!this.room.isGroup) {
+    return this.getOtherMember()?.avatarUrl;
+  }
+  return undefined;
+}
 
   formatTime(dateStr: string): string {
     return new Date(dateStr).toLocaleTimeString([], {

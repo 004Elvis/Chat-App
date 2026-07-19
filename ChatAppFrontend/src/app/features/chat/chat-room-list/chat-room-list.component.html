@@ -12,11 +12,16 @@
   <div class="sidebar-actions">
     <app-settings-menu></app-settings-menu>
 
+    <button class="btn-icon" title="New Direct Message"
+      (click)="toggleNewDm()">
+      <app-icon name="new-chat" [size]="20" class="icon-inverted"></app-icon>
+    </button>
+
     <button class="btn-icon" title="Create Group"
       (click)="showCreateRoom.set(!showCreateRoom())">
       <app-icon name="create-group" [size]="20" class="icon-inverted"></app-icon>
     </button>
-    @if (selectedRoom) {
+    @if (selectedRoom && selectedRoom.isGroup) {
       <button class="btn-icon" title="Add Member"
         (click)="showAddMember.set(!showAddMember())">
         <app-icon name="add-member" [size]="20" class="icon-inverted"></app-icon>
@@ -39,6 +44,51 @@
     [(ngModel)]="searchQuery"
   />
 </div>
+
+<!-- New Direct Message panel -->
+@if (showNewDm()) {
+  <div class="create-room-form">
+    <p class="add-member-title">Start a direct message</p>
+    <input
+      class="form-input"
+      type="text"
+      placeholder="Search by username or email..."
+      [(ngModel)]="dmSearchQuery"
+      (input)="searchDmUsers()"
+    />
+
+    @if (dmError()) {
+      <p class="add-member-error">{{ dmError() }}</p>
+    }
+
+    @if (dmSearchResults().length > 0) {
+      <div class="search-results">
+        @for (user of dmSearchResults(); track user.id) {
+          <div class="search-result-item"
+            [class.search-result-disabled]="dmStarting()"
+            (click)="!dmStarting() && startDm(user)">
+            <div class="avatar avatar-sm">
+              @if (user.avatarUrl) {
+                <img [src]="user.avatarUrl" alt="avatar" class="avatar-img" />
+              } @else {
+                {{ getInitials(user.userName) }}
+              }
+            </div>
+            <div class="search-result-info">
+              <span class="search-result-name">{{ user.userName }}</span>
+              <span class="search-result-email">{{ user.email }}</span>
+            </div>
+            <span class="add-btn">Message</span>
+          </div>
+        }
+      </div>
+    }
+
+    <button class="btn btn-secondary" (click)="toggleNewDm()">
+      Close
+    </button>
+  </div>
+}
 
 <!-- Create room form -->
 @if (showCreateRoom()) {
@@ -127,11 +177,15 @@
       (click)="roomSelected.emit(room)"
     >
       <div class="room-avatar">
-        {{ getInitials(room.name) }}
+        @if (getRoomDisplayAvatar(room)) {
+          <img [src]="getRoomDisplayAvatar(room)" alt="avatar" class="avatar-img" />
+        } @else {
+          {{ getInitials(getRoomDisplayName(room)) }}
+        }
       </div>
       <div class="room-info">
         <div class="room-header">
-          <span class="room-name">{{ room.name }}</span>
+          <span class="room-name">{{ getRoomDisplayName(room) }}</span>
           @if (room.lastMessage) {
             <span class="room-time">
               {{ formatTime(room.lastMessage.sentAt) }}
