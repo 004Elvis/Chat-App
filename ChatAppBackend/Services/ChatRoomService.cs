@@ -15,6 +15,7 @@ namespace ChatAppBackend.Services
         Task<bool> AddMemberAsync(int roomId, Guid userId, Guid requesterId);
         Task<bool> RemoveMemberAsync(int roomId, Guid userId, Guid requesterId);
         Task<List<MessageDto>> GetMessagesAsync(int roomId, Guid userId, int? cursor, int limit);
+        Task<ChatRoomDto?> StartDirectMessageAsync(Guid otherUserId, Guid currentUserId);
     }
 
     public class ChatRoomService : IChatRoomService
@@ -127,6 +128,64 @@ namespace ChatAppBackend.Services
 
             return await GetRoomByIdAsync(room.Id, creatorId);
         }
+
+        public async Task<ChatRoomDto?> StartDirectMessageAsync(
+    Guid otherUserId, Guid currentUserId)
+{
+    if (otherUserId == currentUserId) return null;
+
+    var otherUserExists = await _context.Users
+        .AnyAsync(u => u.Id == otherUserId);
+    if (!otherUserExists) return null;
+
+    /* Reuse an existing 1:1 conversation between exactly these two
+        users instead of spawning duplicates every time someone hits
+       "message" on the same person.*/
+    var existingRoomId = await _context.ChatRooms
+        .Where(r => !r.IsGroup)
+        .Where(r => r.Members.Count == 2
+            && r.Members.Any(m => m.UserId == currentUserId)
+            && r.Members.Any(m => m.UserId == otherUserId))
+        .Select(r => (int?)r.Id)
+        .FirstOrDefaultAsync();
+
+    if (existingRoomId.HasValue)
+        return await GetRoomByIdAsync(existingRoomId.Value, currentUserId);
+
+    var room = new ChatRoom
+    {
+        /* DMs have no name of their own - the frontend displays
+        whichever member isn't the current viewer.*/
+        Name = string.Empty,
+        IsGroup = false,
+        CreatedByUserId = currentUserId,
+        CreatedAt = DateTime.UtcNow
+    };
+
+    _context.ChatRooms.Add(room);
+    await _context.SaveChangesAsync();
+
+    _context.ChatRoomMembers.AddRange(
+        new ChatRoomMember
+        {
+            ChatRoomId = room.Id,
+            UserId = currentUserId,
+            Role = "Member",
+            JoinedAt = DateTime.UtcNow
+        },
+        new ChatRoomMember
+        {
+            ChatRoomId = room.Id,
+            UserId = otherUserId,
+            Role = "Member",
+            JoinedAt = DateTime.UtcNow
+        }
+    );
+
+    await _context.SaveChangesAsync();
+
+    return await GetRoomByIdAsync(room.Id, currentUserId);
+}
 
         public async Task<bool> AddMemberAsync(
             int roomId, Guid userId, Guid requesterId)

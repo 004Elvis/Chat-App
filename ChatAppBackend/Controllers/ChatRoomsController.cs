@@ -56,6 +56,23 @@ namespace ChatAppBackend.Controllers
             return CreatedAtAction(nameof(GetRoom), new { id = room.Id }, room);
         }
 
+        [HttpPost("direct")]
+public async Task<IActionResult> StartDirectMessage(
+    [FromBody] StartDirectMessageDto dto)
+{
+    if (!ModelState.IsValid)
+        return BadRequest(ModelState);
+
+    var room = await _chatRoomService
+        .StartDirectMessageAsync(dto.UserId, GetCurrentUserId());
+
+    if (room == null)
+        return BadRequest(new { message =
+            "Could not start conversation with that user." });
+
+    return Ok(room);
+}
+
         [HttpPost("{id}/members")]
         public async Task<IActionResult> AddMember(int id, [FromBody] Guid userId)
         {
