@@ -5,20 +5,22 @@
       ←
     </button>
     <div class="room-avatar-sm">
-  @if (displayAvatar) {
-    <img [src]="displayAvatar" alt="avatar" class="avatar-img" />
-  } @else {
-    {{ getInitials(displayName) }}
-  }
-</div>
-<div class="chat-header-info">
-  <h3 class="chat-header-name">{{ displayName }}</h3>
-  @if (room.isGroup) {
-    <span class="chat-header-members">
-      {{ room.members.length || 0 }} members
-    </span>
-  }
-</div>
+      @if (displayAvatar) {
+        <img [src]="displayAvatar" alt="avatar" class="avatar-img" />
+      } @else {
+        {{ getInitials(displayName) }}
+      }
+    </div>
+    <div class="chat-header-info"
+      [class.chat-header-clickable]="room.isGroup"
+      (click)="room.isGroup && showMembersModal.set(true)">
+      <h3 class="chat-header-name">{{ displayName }}</h3>
+      @if (room.isGroup) {
+        <span class="chat-header-members">
+          {{ room.members.length || 0 }} members
+        </span>
+      }
+    </div>
   </div>
 
   <!-- Messages -->
@@ -31,14 +33,12 @@
     }
 
     @for (message of messages; track message.id; let i = $index) {
-      <!-- Date separator -->
       @if (showDateSeparator(i)) {
         <div class="date-separator">
           <span>{{ formatDate(message.sentAt) }}</span>
         </div>
       }
 
-      <!-- Message bubble -->
       <div class="message-wrapper"
         [class.message-own]="isOwnMessage(message)">
 
@@ -54,7 +54,11 @@
           }
           <div class="message-bubble"
             [class.bubble-own]="isOwnMessage(message)"
-            [class.bubble-deleted]="message.isDeleted">
+            [class.bubble-deleted]="message.isDeleted"
+            (contextmenu)="onMessageContextMenu($event, message)"
+            (touchstart)="onTouchStart($event, message)"
+            (touchend)="cancelLongPress()"
+            (touchmove)="cancelLongPress()">
             {{ message.isDeleted ? 'This message was deleted' : message.content }}
           </div>
           <span class="message-time">{{ formatTime(message.sentAt) }}</span>
@@ -62,7 +66,6 @@
       </div>
     }
 
-    <!-- Typing indicator -->
     @if (typingText) {
       <div class="typing-indicator">
         <div class="typing-dots">
@@ -81,3 +84,21 @@
     (typingChanged)="onTyping($event)"
   />
 </div>
+
+@if (showMembersModal() && room.isGroup) {
+  <app-group-members-modal
+    [room]="room"
+    [currentUser]="currentUser"
+    (closed)="showMembersModal.set(false)"
+  />
+}
+
+@if (contextMenu(); as menu) {
+  <div class="context-menu-backdrop" (click)="closeContextMenu()"></div>
+  <div class="context-menu" [style.left.px]="menu.x" [style.top.px]="menu.y">
+    <button class="context-menu-item context-menu-danger" (click)="deleteMessage()">
+      <app-icon name="trash" [size]="16"></app-icon>
+      <span>Delete Message</span>
+    </button>
+  </div>
+}

@@ -7,6 +7,7 @@ export interface ChatRoom {
   isGroup: boolean;
   createdAt: string;
   members: User[];
+  adminUserIds: string[];
   unreadCount: number;
   lastMessage?: Message;
 }
