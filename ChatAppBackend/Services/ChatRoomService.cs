@@ -3,6 +3,8 @@ using ChatAppBackend.DTOs.ChatRooms;
 using ChatAppBackend.DTOs.Messages;
 using ChatAppBackend.DTOs.Users;
 using ChatAppBackend.Models;
+using ChatAppBackend.Hubs;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace ChatAppBackend.Services
@@ -12,19 +14,25 @@ namespace ChatAppBackend.Services
         Task<List<ChatRoomDto>> GetUserRoomsAsync(Guid userId);
         Task<ChatRoomDto?> GetRoomByIdAsync(int roomId, Guid userId);
         Task<ChatRoomDto?> CreateRoomAsync(CreateChatRoomDto dto, Guid creatorId);
-        Task<bool> AddMemberAsync(int roomId, Guid userId, Guid requesterId);
-        Task<bool> RemoveMemberAsync(int roomId, Guid userId, Guid requesterId);
-        Task<List<MessageDto>> GetMessagesAsync(int roomId, Guid userId, int? cursor, int limit);
         Task<ChatRoomDto?> StartDirectMessageAsync(Guid otherUserId, Guid currentUserId);
+        Task<bool> AddMemberAsync(int roomId, Guid userId, Guid requesterId);
+        Task<(bool Success, string? Error)> RemoveMemberAsync(int roomId, Guid userId, Guid requesterId);
+        Task<(bool Success, string? Error)> PromoteToAdminAsync(int roomId, Guid targetUserId, Guid requesterId);
+        Task<bool> LeaveRoomAsync(int roomId, Guid userId);
+        Task<bool> DeleteRoomAsync(int roomId, Guid requesterId);
+        Task<List<MessageDto>> GetMessagesAsync(int roomId, Guid userId, int? cursor, int limit);
     }
 
     public class ChatRoomService : IChatRoomService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IHubContext<ChatHub> _hubContext;
 
-        public ChatRoomService(ApplicationDbContext context)
+        public ChatRoomService(
+            ApplicationDbContext context, IHubContext<ChatHub> hubContext)
         {
             _context = context;
+            _hubContext = hubContext;
         }
 
         public async Task<List<ChatRoomDto>> GetUserRoomsAsync(Guid userId)
@@ -96,7 +104,6 @@ namespace ChatAppBackend.Services
             _context.ChatRooms.Add(room);
             await _context.SaveChangesAsync();
 
-            // Add creator as admin member
             var members = new List<ChatRoomMember>
             {
                 new ChatRoomMember
@@ -108,7 +115,6 @@ namespace ChatAppBackend.Services
                 }
             };
 
-            // Add other members
             foreach (var memberId in dto.MemberIds)
             {
                 if (memberId != creatorId)
@@ -130,62 +136,57 @@ namespace ChatAppBackend.Services
         }
 
         public async Task<ChatRoomDto?> StartDirectMessageAsync(
-    Guid otherUserId, Guid currentUserId)
-{
-    if (otherUserId == currentUserId) return null;
-
-    var otherUserExists = await _context.Users
-        .AnyAsync(u => u.Id == otherUserId);
-    if (!otherUserExists) return null;
-
-    /* Reuse an existing 1:1 conversation between exactly these two
-        users instead of spawning duplicates every time someone hits
-       "message" on the same person.*/
-    var existingRoomId = await _context.ChatRooms
-        .Where(r => !r.IsGroup)
-        .Where(r => r.Members.Count == 2
-            && r.Members.Any(m => m.UserId == currentUserId)
-            && r.Members.Any(m => m.UserId == otherUserId))
-        .Select(r => (int?)r.Id)
-        .FirstOrDefaultAsync();
-
-    if (existingRoomId.HasValue)
-        return await GetRoomByIdAsync(existingRoomId.Value, currentUserId);
-
-    var room = new ChatRoom
-    {
-        /* DMs have no name of their own - the frontend displays
-        whichever member isn't the current viewer.*/
-        Name = string.Empty,
-        IsGroup = false,
-        CreatedByUserId = currentUserId,
-        CreatedAt = DateTime.UtcNow
-    };
-
-    _context.ChatRooms.Add(room);
-    await _context.SaveChangesAsync();
-
-    _context.ChatRoomMembers.AddRange(
-        new ChatRoomMember
+            Guid otherUserId, Guid currentUserId)
         {
-            ChatRoomId = room.Id,
-            UserId = currentUserId,
-            Role = "Member",
-            JoinedAt = DateTime.UtcNow
-        },
-        new ChatRoomMember
-        {
-            ChatRoomId = room.Id,
-            UserId = otherUserId,
-            Role = "Member",
-            JoinedAt = DateTime.UtcNow
+            if (otherUserId == currentUserId) return null;
+
+            var otherUserExists = await _context.Users
+                .AnyAsync(u => u.Id == otherUserId);
+            if (!otherUserExists) return null;
+
+            var existingRoomId = await _context.ChatRooms
+                .Where(r => !r.IsGroup)
+                .Where(r => r.Members.Count == 2
+                    && r.Members.Any(m => m.UserId == currentUserId)
+                    && r.Members.Any(m => m.UserId == otherUserId))
+                .Select(r => (int?)r.Id)
+                .FirstOrDefaultAsync();
+
+            if (existingRoomId.HasValue)
+                return await GetRoomByIdAsync(existingRoomId.Value, currentUserId);
+
+            var room = new ChatRoom
+            {
+                Name = string.Empty,
+                IsGroup = false,
+                CreatedByUserId = currentUserId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.ChatRooms.Add(room);
+            await _context.SaveChangesAsync();
+
+            _context.ChatRoomMembers.AddRange(
+                new ChatRoomMember
+                {
+                    ChatRoomId = room.Id,
+                    UserId = currentUserId,
+                    Role = "Member",
+                    JoinedAt = DateTime.UtcNow
+                },
+                new ChatRoomMember
+                {
+                    ChatRoomId = room.Id,
+                    UserId = otherUserId,
+                    Role = "Member",
+                    JoinedAt = DateTime.UtcNow
+                }
+            );
+
+            await _context.SaveChangesAsync();
+
+            return await GetRoomByIdAsync(room.Id, currentUserId);
         }
-    );
-
-    await _context.SaveChangesAsync();
-
-    return await GetRoomByIdAsync(room.Id, currentUserId);
-}
 
         public async Task<bool> AddMemberAsync(
             int roomId, Guid userId, Guid requesterId)
@@ -214,8 +215,136 @@ namespace ChatAppBackend.Services
             return true;
         }
 
-        public async Task<bool> RemoveMemberAsync(
+        public async Task<(bool Success, string? Error)> RemoveMemberAsync(
             int roomId, Guid userId, Guid requesterId)
+        {
+            if (userId == requesterId)
+                return (false, "Use 'Leave Group' to remove yourself.");
+
+            var isAdmin = await _context.ChatRoomMembers
+                .AnyAsync(m => m.ChatRoomId == roomId
+                    && m.UserId == requesterId
+                    && m.Role == "Admin");
+
+            if (!isAdmin)
+                return (false, "Only admins can remove members.");
+
+            var member = await _context.ChatRoomMembers
+                .FirstOrDefaultAsync(m => m.ChatRoomId == roomId
+                    && m.UserId == userId);
+
+            if (member == null)
+                return (false, "That person is not a member of this room.");
+
+            if (member.Role == "Admin")
+                return (false, "Admins can't remove a fellow admin.");
+
+            _context.ChatRoomMembers.Remove(member);
+            await _context.SaveChangesAsync();
+
+            await _hubContext.Clients.Group(roomId.ToString())
+                .SendAsync("MemberRemoved", roomId, userId);
+
+            return (true, null);
+        }
+
+        public async Task<(bool Success, string? Error)> PromoteToAdminAsync(
+            int roomId, Guid targetUserId, Guid requesterId)
+        {
+            Console.WriteLine($"[PROMOTE DEBUG] roomId={roomId}, requesterId={requesterId}, targetUserId={targetUserId}");
+
+            var requesterMembership = await _context.ChatRoomMembers
+                .Where(m => m.ChatRoomId == roomId && m.UserId == requesterId)
+                .Select(m => new { m.UserId, m.Role })
+                .FirstOrDefaultAsync();
+
+            Console.WriteLine(requesterMembership == null
+                ? "[PROMOTE DEBUG] No ChatRoomMember row found for this requesterId in this room at all."
+                : $"[PROMOTE DEBUG] Found membership - Role='{requesterMembership.Role}'");
+
+            var allMembers = await _context.ChatRoomMembers
+                .Where(m => m.ChatRoomId == roomId)
+                .Select(m => new { m.UserId, m.Role })
+                .ToListAsync();
+            Console.WriteLine("[PROMOTE DEBUG] All members in this room:");
+            foreach (var m in allMembers)
+                Console.WriteLine($"  - UserId={m.UserId}, Role={m.Role}");
+
+            var isAdmin = await _context.ChatRoomMembers
+                .AnyAsync(m => m.ChatRoomId == roomId
+                    && m.UserId == requesterId
+                    && m.Role == "Admin");
+
+            if (!isAdmin)
+                return (false, "Only admins can promote members.");
+
+            var target = await _context.ChatRoomMembers
+                .FirstOrDefaultAsync(m => m.ChatRoomId == roomId
+                    && m.UserId == targetUserId);
+
+            if (target == null)
+                return (false, "That person is not a member of this room.");
+
+            if (target.Role == "Admin")
+                return (true, null);
+
+            target.Role = "Admin";
+            await _context.SaveChangesAsync();
+
+            await _hubContext.Clients.Group(roomId.ToString())
+                .SendAsync("MemberPromoted", roomId, targetUserId);
+
+            return (true, null);
+        }
+
+        public async Task<bool> LeaveRoomAsync(int roomId, Guid userId)
+        {
+            var member = await _context.ChatRoomMembers
+                .FirstOrDefaultAsync(m => m.ChatRoomId == roomId
+                    && m.UserId == userId);
+
+            if (member == null) return false;
+
+            var wasAdmin = member.Role == "Admin";
+
+            _context.ChatRoomMembers.Remove(member);
+            await _context.SaveChangesAsync();
+
+            var remainingMembers = await _context.ChatRoomMembers
+                .Where(m => m.ChatRoomId == roomId)
+                .OrderBy(m => m.JoinedAt)
+                .ToListAsync();
+
+            if (remainingMembers.Count == 0)
+            {
+                var room = await _context.ChatRooms.FindAsync(roomId);
+                if (room != null)
+                {
+                    await _hubContext.Clients.Group(roomId.ToString())
+                        .SendAsync("RoomDeleted", roomId);
+
+                    _context.ChatRooms.Remove(room);
+                    await _context.SaveChangesAsync();
+                }
+                return true;
+            }
+
+            if (wasAdmin && !remainingMembers.Any(m => m.Role == "Admin"))
+            {
+                remainingMembers[0].Role = "Admin";
+                await _context.SaveChangesAsync();
+
+                await _hubContext.Clients.Group(roomId.ToString())
+                    .SendAsync("MemberPromoted", roomId, remainingMembers[0].UserId);
+            }
+
+            await _hubContext.Clients.Group(roomId.ToString())
+                .SendAsync("MemberLeft", roomId, userId);
+
+            return true;
+        }
+
+        public async Task<bool> DeleteRoomAsync(int roomId, Guid requesterId)
         {
             var isAdmin = await _context.ChatRoomMembers
                 .AnyAsync(m => m.ChatRoomId == roomId
@@ -224,14 +353,17 @@ namespace ChatAppBackend.Services
 
             if (!isAdmin) return false;
 
-            var member = await _context.ChatRoomMembers
-                .FirstOrDefaultAsync(m => m.ChatRoomId == roomId
-                    && m.UserId == userId);
+            var room = await _context.ChatRooms
+                .FirstOrDefaultAsync(r => r.Id == roomId && r.IsGroup);
 
-            if (member == null) return false;
+            if (room == null) return false;
 
-            _context.ChatRoomMembers.Remove(member);
+            await _hubContext.Clients.Group(roomId.ToString())
+                .SendAsync("RoomDeleted", roomId);
+
+            _context.ChatRooms.Remove(room);
             await _context.SaveChangesAsync();
+
             return true;
         }
 
@@ -287,6 +419,10 @@ namespace ChatAppBackend.Services
                     AvatarUrl = m.User.AvatarUrl,
                     LastSeenAt = m.User.LastSeenAt
                 }).ToList(),
+                AdminUserIds = room.Members
+                    .Where(m => m.Role == "Admin")
+                    .Select(m => m.UserId)
+                    .ToList(),
                 LastMessage = lastMessage == null ? null : new MessageDto
                 {
                     Id = lastMessage.Id,

@@ -57,21 +57,21 @@ namespace ChatAppBackend.Controllers
         }
 
         [HttpPost("direct")]
-public async Task<IActionResult> StartDirectMessage(
-    [FromBody] StartDirectMessageDto dto)
-{
-    if (!ModelState.IsValid)
-        return BadRequest(ModelState);
+        public async Task<IActionResult> StartDirectMessage(
+            [FromBody] StartDirectMessageDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-    var room = await _chatRoomService
-        .StartDirectMessageAsync(dto.UserId, GetCurrentUserId());
+            var room = await _chatRoomService
+                .StartDirectMessageAsync(dto.UserId, GetCurrentUserId());
 
-    if (room == null)
-        return BadRequest(new { message =
-            "Could not start conversation with that user." });
+            if (room == null)
+                return BadRequest(new { message =
+                    "Could not start conversation with that user." });
 
-    return Ok(room);
-}
+            return Ok(room);
+        }
 
         [HttpPost("{id}/members")]
         public async Task<IActionResult> AddMember(int id, [FromBody] Guid userId)
@@ -88,13 +88,50 @@ public async Task<IActionResult> StartDirectMessage(
         [HttpDelete("{id}/members/{userId}")]
         public async Task<IActionResult> RemoveMember(int id, Guid userId)
         {
-            var result = await _chatRoomService
+            var (success, error) = await _chatRoomService
                 .RemoveMemberAsync(id, userId, GetCurrentUserId());
 
-            if (!result)
-                return BadRequest(new { message = "Failed to remove member." });
+            if (!success)
+                return BadRequest(new { message = error ?? "Failed to remove member." });
 
             return Ok(new { message = "Member removed successfully." });
+        }
+
+        [HttpPost("{id}/members/{userId}/promote")]
+        public async Task<IActionResult> PromoteToAdmin(int id, Guid userId)
+        {
+            var (success, error) = await _chatRoomService
+                .PromoteToAdminAsync(id, userId, GetCurrentUserId());
+
+            if (!success)
+                return BadRequest(new { message = error ?? "Failed to promote member." });
+
+            return Ok(new { message = "Member promoted to admin." });
+        }
+
+        [HttpPost("{id}/leave")]
+        public async Task<IActionResult> LeaveRoom(int id)
+        {
+            var result = await _chatRoomService
+                .LeaveRoomAsync(id, GetCurrentUserId());
+
+            if (!result)
+                return BadRequest(new { message = "Failed to leave room." });
+
+            return Ok(new { message = "You have left the room." });
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteRoom(int id)
+        {
+            var result = await _chatRoomService
+                .DeleteRoomAsync(id, GetCurrentUserId());
+
+            if (!result)
+                return BadRequest(new { message =
+                    "Failed to delete room. Only group admins can delete a room." });
+
+            return Ok(new { message = "Room deleted." });
         }
 
         [HttpGet("{id}/messages")]

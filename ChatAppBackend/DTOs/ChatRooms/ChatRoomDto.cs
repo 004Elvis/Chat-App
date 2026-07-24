@@ -10,6 +10,7 @@ namespace ChatAppBackend.DTOs.ChatRooms
         public bool IsGroup { get; set; }
         public DateTime CreatedAt { get; set; }
         public List<UserDto> Members { get; set; } = new List<UserDto>();
+        public List<Guid> AdminUserIds { get; set; } = new List<Guid>();
         public int UnreadCount { get; set; }
         public MessageDto? LastMessage { get; set; }
     }
