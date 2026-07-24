@@ -30,6 +30,22 @@ export class ChatService {
     return this.http.post<ChatRoom>(`${this.API}/direct`, { userId });
   }
 
+  removeMember(roomId: number, userId: string): Observable<any> {
+    return this.http.delete(`${this.API}/${roomId}/members/${userId}`);
+  }
+
+  promoteToAdmin(roomId: number, userId: string): Observable<any> {
+    return this.http.post(`${this.API}/${roomId}/members/${userId}/promote`, {});
+  }
+
+  leaveRoom(roomId: number): Observable<any> {
+    return this.http.post(`${this.API}/${roomId}/leave`, {});
+  }
+
+  deleteRoom(roomId: number): Observable<any> {
+    return this.http.delete(`${this.API}/${roomId}`);
+  }
+
   getMessages(roomId: number,
     cursor?: number): Observable<Message[]> {
     const params = cursor ? `?cursor=${cursor}&limit=50` : '?limit=50';

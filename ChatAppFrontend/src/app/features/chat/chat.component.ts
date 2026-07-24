@@ -28,22 +28,70 @@ export class ChatComponent implements OnInit, OnDestroy {
     private chatService: ChatService
   ) {}
 
- async ngOnInit(): Promise<void> {
-  await this.signalRService.startConnection();
-  this.loadRooms();
+  async ngOnInit(): Promise<void> {
+    await this.signalRService.startConnection();
+    this.loadRooms();
 
-  this.signalRService.messages$.subscribe(messages => {
-    const currentRoom = this.selectedRoom();
-    if (currentRoom && messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      if (lastMessage.chatRoomId === currentRoom.id) {
-        this.messages.set(messages.filter(
-          m => m.chatRoomId === currentRoom.id
-        ));
+    this.signalRService.messages$.subscribe(messages => {
+      const currentRoom = this.selectedRoom();
+      if (currentRoom && messages.length > 0) {
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage.chatRoomId === currentRoom.id) {
+          this.messages.set(messages.filter(
+            m => m.chatRoomId === currentRoom.id
+          ));
+        }
       }
+    });
+
+    this.signalRService.roomDeleted$.subscribe(roomId => {
+      this.dropRoom(roomId);
+    });
+
+    this.signalRService.memberRemoved$.subscribe(({ roomId, userId }) => {
+      if (userId === this.authService.currentUser()?.id) {
+        this.dropRoom(roomId);
+      } else {
+        this.refreshRoom(roomId);
+      }
+    });
+
+    this.signalRService.memberLeft$.subscribe(({ roomId, userId }) => {
+      if (userId === this.authService.currentUser()?.id) {
+        this.dropRoom(roomId);
+      } else {
+        this.refreshRoom(roomId);
+      }
+    });
+
+    this.signalRService.memberPromoted$.subscribe(({ roomId }) => {
+      this.refreshRoom(roomId);
+    });
+  }
+
+  private dropRoom(roomId: number): void {
+    this.rooms.update(rooms => rooms.filter(r => r.id !== roomId));
+    if (this.selectedRoom()?.id === roomId) {
+      this.selectedRoom.set(null);
+      this.showSidebar.set(true);
     }
-  });
-}
+  }
+
+  private refreshRoom(roomId: number): void {
+    this.chatService.getRoom(roomId).subscribe({
+      next: updated => {
+        this.rooms.update(rooms =>
+          rooms.map(r => r.id === roomId ? updated : r)
+        );
+        if (this.selectedRoom()?.id === roomId) {
+          this.selectedRoom.set(updated);
+        }
+      },
+      error: () => {
+        this.dropRoom(roomId);
+      }
+    });
+  }
 
   async ngOnDestroy(): Promise<void> {
     await this.signalRService.stopConnection();
@@ -60,30 +108,30 @@ export class ChatComponent implements OnInit, OnDestroy {
   }
 
   async selectRoom(room: ChatRoom): Promise<void> {
-  if (this.selectedRoom()) {
-    await this.signalRService.leaveRoom(this.selectedRoom()!.id);
+    if (this.selectedRoom()) {
+      await this.signalRService.leaveRoom(this.selectedRoom()!.id);
+    }
+
+    this.signalRService.clearMessages();
+    this.messages.set([]);
+
+    this.chatService.getRoom(room.id).subscribe({
+      next: fullRoom => this.selectedRoom.set(fullRoom),
+      error: () => this.dropRoom(room.id)
+    });
+
+    await this.signalRService.joinRoom(room.id);
+
+    this.chatService.getMessages(room.id).subscribe(messages => {
+      const reversed = [...messages].reverse();
+      this.messages.set(reversed);
+      this.signalRService.messages$.next(reversed);
+    });
+
+    if (window.innerWidth < 768) {
+      this.showSidebar.set(false);
+    }
   }
-
-  this.signalRService.clearMessages();
-  this.messages.set([]);
-
-  // Reload full room details to get updated member count
-  this.chatService.getRoom(room.id).subscribe(fullRoom => {
-    this.selectedRoom.set(fullRoom);
-  });
-
-  await this.signalRService.joinRoom(room.id);
-
-  this.chatService.getMessages(room.id).subscribe(messages => {
-    const reversed = [...messages].reverse();
-    this.messages.set(reversed);
-    this.signalRService.messages$.next(reversed);
-  });
-
-  if (window.innerWidth < 768) {
-    this.showSidebar.set(false);
-  }
-}
 
   showRoomList(): void {
     this.showSidebar.set(true);
@@ -100,12 +148,12 @@ export class ChatComponent implements OnInit, OnDestroy {
   }
 
   onDmStarted(room: ChatRoom): void {
-  const exists = this.rooms().some(r => r.id === room.id);
-  if (!exists) {
-    this.rooms.update(rooms => [...rooms, room]);
+    const exists = this.rooms().some(r => r.id === room.id);
+    if (!exists) {
+      this.rooms.update(rooms => [...rooms, room]);
+    }
+    this.selectRoom(room);
   }
-  this.selectRoom(room);
-}
 
   logout(): void {
     this.signalRService.stopConnection();

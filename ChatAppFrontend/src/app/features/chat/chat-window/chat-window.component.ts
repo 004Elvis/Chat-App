@@ -8,11 +8,13 @@ import { Message } from '../../../core/models/message.model';
 import { User } from '../../../core/models/user.model';
 import { SignalRService } from '../../../core/services/signalr.service';
 import { MessageInputComponent } from '../message-input/message-input.component';
+import { GroupMembersModalComponent } from '../group-members-modal/group-members-modal.component';
+import { IconComponent } from '../../../core/components/icon/icon.component';
 
 @Component({
   selector: 'app-chat-window',
   standalone: true,
-  imports: [CommonModule, FormsModule, MessageInputComponent],
+  imports: [CommonModule, FormsModule, MessageInputComponent, GroupMembersModalComponent, IconComponent],
   templateUrl: './chat-window.component.html',
   styleUrl: './chat-window.component.css'
 })
@@ -27,6 +29,9 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
   @ViewChild('messagesEnd') messagesEnd!: ElementRef;
 
   shouldScroll = false;
+  showMembersModal = signal(false);
+  contextMenu = signal<{ messageId: number; x: number; y: number } | null>(null);
+  private longPressTimer: any;
 
   ngOnChanges(): void {
     this.shouldScroll = true;
@@ -50,27 +55,27 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
   }
 
   getInitials(name: string): string {
-  return (name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-}
-
-getOtherMember(): User | null {
-  if (this.room.isGroup || !this.currentUser) return null;
-  return this.room.members.find(m => m.id !== this.currentUser!.id) || null;
-}
-
-get displayName(): string {
-  if (!this.room.isGroup) {
-    return this.getOtherMember()?.userName || 'Unknown User';
+    return (name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   }
-  return this.room.name;
-}
 
-get displayAvatar(): string | undefined {
-  if (!this.room.isGroup) {
-    return this.getOtherMember()?.avatarUrl;
+  getOtherMember(): User | null {
+    if (this.room.isGroup || !this.currentUser) return null;
+    return this.room.members.find(m => m.id !== this.currentUser!.id) || null;
   }
-  return undefined;
-}
+
+  get displayName(): string {
+    if (!this.room.isGroup) {
+      return this.getOtherMember()?.userName || 'Unknown User';
+    }
+    return this.room.name;
+  }
+
+  get displayAvatar(): string | undefined {
+    if (!this.room.isGroup) {
+      return this.getOtherMember()?.avatarUrl;
+    }
+    return undefined;
+  }
 
   formatTime(dateStr: string): string {
     return new Date(dateStr).toLocaleTimeString([], {
@@ -114,11 +119,42 @@ get displayAvatar(): string | undefined {
   }
 
   async onSendMessage(content: string): Promise<void> {
-  console.log('Sending message to room:', this.room?.id, 'content:', content);
-  if (content.trim() && this.room) {
-    await this.signalRService.sendMessage(this.room.id, content);
+    console.log('Sending message to room:', this.room?.id, 'content:', content);
+    if (content.trim() && this.room) {
+      await this.signalRService.sendMessage(this.room.id, content);
+    }
   }
-}
+
+  onMessageContextMenu(event: MouseEvent, message: Message): void {
+    if (!this.isOwnMessage(message) || message.isDeleted) return;
+    event.preventDefault();
+    this.contextMenu.set({ messageId: message.id, x: event.clientX, y: event.clientY });
+  }
+
+  onTouchStart(event: TouchEvent, message: Message): void {
+    if (!this.isOwnMessage(message) || message.isDeleted) return;
+    const touch = event.touches[0];
+    this.longPressTimer = setTimeout(() => {
+      this.contextMenu.set({
+        messageId: message.id, x: touch.clientX, y: touch.clientY
+      });
+    }, 500);
+  }
+
+  cancelLongPress(): void {
+    clearTimeout(this.longPressTimer);
+  }
+
+  closeContextMenu(): void {
+    this.contextMenu.set(null);
+  }
+
+  async deleteMessage(): Promise<void> {
+    const menu = this.contextMenu();
+    if (!menu) return;
+    await this.signalRService.deleteMessage(menu.messageId);
+    this.contextMenu.set(null);
+  }
 
   async onTyping(isTyping: boolean): Promise<void> {
     if (isTyping) {

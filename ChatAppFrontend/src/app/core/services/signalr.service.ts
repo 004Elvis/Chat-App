@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import { Message } from '../models/message.model';
 import { AuthService } from './auth.service';
 
@@ -12,29 +12,34 @@ export class SignalRService {
   typingUsers$ = new BehaviorSubject<string[]>([]);
   onlineUsers$ = new BehaviorSubject<string[]>([]);
 
+  roomDeleted$ = new Subject<number>();
+  memberRemoved$ = new Subject<{ roomId: number; userId: string }>();
+  memberPromoted$ = new Subject<{ roomId: number; userId: string }>();
+  memberLeft$ = new Subject<{ roomId: number; userId: string }>();
+
   constructor(private authService: AuthService) {}
 
   async startConnection(): Promise<void> {
-  const token = this.authService.getToken();
-  console.log('SignalR token exists:', !!token);
+    const token = this.authService.getToken();
+    console.log('SignalR token exists:', !!token);
 
-  this.hubConnection = new signalR.HubConnectionBuilder()
-    .withUrl(`http://localhost:5082/chathub?access_token=${token}`, {
-      transport: signalR.HttpTransportType.WebSockets,
-      skipNegotiation: true
-    })
-    .withAutomaticReconnect()
-    .build();
+    this.hubConnection = new signalR.HubConnectionBuilder()
+      .withUrl(`http://localhost:5082/chathub?access_token=${token}`, {
+        transport: signalR.HttpTransportType.WebSockets,
+        skipNegotiation: true
+      })
+      .withAutomaticReconnect()
+      .build();
 
-  this.registerHandlers();
+    this.registerHandlers();
 
-  try {
-    await this.hubConnection.start();
-    console.log('SignalR connected');
-  } catch (err) {
-    console.error('SignalR connection error:', err);
+    try {
+      await this.hubConnection.start();
+      console.log('SignalR connected');
+    } catch (err) {
+      console.error('SignalR connection error:', err);
+    }
   }
-}
 
   async stopConnection(): Promise<void> {
     if (this.hubConnection) {
@@ -56,12 +61,18 @@ export class SignalRService {
   }
 
   async sendMessage(roomId: number, content: string): Promise<void> {
-  console.log('SignalR sendMessage called - roomId:', roomId, 'content:', content);
-  console.log('Hub connection state:', this.hubConnection?.state);
-  if (this.hubConnection) {
-    await this.hubConnection.invoke('SendMessage', roomId, content);
+    console.log('SignalR sendMessage called - roomId:', roomId, 'content:', content);
+    console.log('Hub connection state:', this.hubConnection?.state);
+    if (this.hubConnection) {
+      await this.hubConnection.invoke('SendMessage', roomId, content);
+    }
   }
-}
+
+  async deleteMessage(messageId: number): Promise<void> {
+    if (this.hubConnection) {
+      await this.hubConnection.invoke('DeleteMessage', messageId);
+    }
+  }
 
   async startTyping(roomId: number): Promise<void> {
     if (this.hubConnection) {
@@ -93,6 +104,15 @@ export class SignalRService {
       this.messages$.next([...current, message]);
     });
 
+    this.hubConnection.on('MessageDeleted', (_roomId: number, messageId: number) => {
+      const current = this.messages$.value;
+      this.messages$.next(current.map(m =>
+        m.id === messageId
+          ? { ...m, isDeleted: true, content: 'This message was deleted' }
+          : m
+      ));
+    });
+
     this.hubConnection.on('UserTyping', (_roomId: number, userName: string) => {
       const current = this.typingUsers$.value;
       if (!current.includes(userName)) {
@@ -117,6 +137,22 @@ export class SignalRService {
       this.onlineUsers$.next(
         this.onlineUsers$.value.filter(id => id !== userId)
       );
+    });
+
+    this.hubConnection.on('RoomDeleted', (roomId: number) => {
+      this.roomDeleted$.next(roomId);
+    });
+
+    this.hubConnection.on('MemberRemoved', (roomId: number, userId: string) => {
+      this.memberRemoved$.next({ roomId, userId });
+    });
+
+    this.hubConnection.on('MemberPromoted', (roomId: number, userId: string) => {
+      this.memberPromoted$.next({ roomId, userId });
+    });
+
+    this.hubConnection.on('MemberLeft', (roomId: number, userId: string) => {
+      this.memberLeft$.next({ roomId, userId });
     });
   }
 }
