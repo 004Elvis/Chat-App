@@ -1,6 +1,24 @@
 <div class="message-input-container">
   <div class="message-input-wrapper">
+    <div class="emoji-btn-wrapper">
+      <button
+        class="btn-icon emoji-toggle-btn"
+        type="button"
+        title="Emoji"
+        (click)="toggleEmojiPicker()">
+        <app-icon name="emoji" [size]="20"></app-icon>
+      </button>
+
+      @if (showEmojiPicker()) {
+        <app-emoji-picker
+          (emojiSelected)="onEmojiSelected($event)"
+          (closed)="showEmojiPicker.set(false)"
+        />
+      }
+    </div>
+
     <textarea
+      #messageTextarea
       class="message-textarea"
       placeholder="Type a message... (Enter to send)"
       [(ngModel)]="message"
@@ -9,11 +27,11 @@
       rows="1"
     ></textarea>
     <button
-  class="send-btn"
-  (click)="send()"
-  [disabled]="!message.trim()"
-  title="Send message">
-  <app-icon name="send" [size]="18" class="icon-inverted"></app-icon>
-</button>
+      class="send-btn"
+      (click)="send()"
+      [disabled]="!message.trim()"
+      title="Send message">
+      <app-icon name="send" [size]="18" class="icon-inverted"></app-icon>
+    </button>
   </div>
 </div>

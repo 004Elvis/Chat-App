@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 export type IconName =
   | 'settings' | 'edit-profile' | 'add-member' | 'create-group'
   | 'logout' | 'sun' | 'moon' | 'eye' | 'eye-off' | 'search' | 'close' | 'send'
-  | 'new-chat' | 'trash';
+  | 'new-chat' | 'trash' | 'emoji' | 'app-logo';
 
 @Component({
   selector: 'app-icon',
@@ -102,6 +102,20 @@ export type IconName =
           <path d="M10 11v6"></path>
           <path d="M14 11v6"></path>
         }
+        @case ('emoji') {
+          <circle cx="12" cy="12" r="9.5"></circle>
+          <path d="M8.5 10.5h.01"></path>
+          <path d="M15.5 10.5h.01"></path>
+          <path d="M8 14.5c1 1.3 2.4 2 4 2s3-.7 4-2"></path>
+        }
+        @case ('app-logo') {
+          <rect x="7" y="2.5" width="10" height="19" rx="2.2"></rect>
+          <path d="M9.5 7h5"></path>
+          <path d="M9.5 10h5"></path>
+          <path d="M9.5 13h3"></path>
+          <path d="M3 8a2.2 2.2 0 0 1 2.2-2.2h1.1v4.6H5.2A2.2 2.2 0 0 1 3 8.2z"></path>
+          <path d="M18.7 13.5h1.1A2.2 2.2 0 0 1 22 15.7v.2a2.2 2.2 0 0 1-2.2 2.2h-1.1z"></path>
+       }
       }
     </svg>
   `,

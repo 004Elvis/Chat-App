@@ -1,0 +1,35 @@
+<div class="emoji-picker-backdrop" (click)="close()"></div>
+<div class="emoji-picker" (click)="$event.stopPropagation()">
+  <div class="emoji-search">
+    <input
+      type="text"
+      placeholder="Search emoji..."
+      [(ngModel)]="searchQuery"
+    />
+  </div>
+
+  @if (!searchQuery.trim()) {
+    <div class="emoji-tabs">
+      @for (category of categories; track category.name; let i = $index) {
+        <button
+          class="emoji-tab"
+          [class.emoji-tab-active]="activeCategoryIndex() === i"
+          [title]="category.name"
+          (click)="selectCategory(i)">
+          {{ category.icon }}
+        </button>
+      }
+    </div>
+  }
+
+  <div class="emoji-grid">
+    @if (filteredEmojis.length === 0) {
+      <p class="emoji-empty">No emoji found.</p>
+    }
+    @for (emoji of filteredEmojis; track emoji.char) {
+      <button class="emoji-item" [title]="emoji.keywords" (click)="pick(emoji.char)">
+        {{ emoji.char }}
+      </button>
+    }
+  </div>
+</div>
