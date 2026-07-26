@@ -36,6 +36,15 @@
 
 .message-textarea::placeholder { color: var(--text-secondary); }
 
+.emoji-btn-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.emoji-toggle-btn {
+  color: var(--text-secondary);
+}
+
 .send-btn {
   width: 36px;
   height: 36px;

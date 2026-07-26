@@ -7,11 +7,12 @@ import { ChatRoom } from '../../core/models/chat-room.model';
 import { Message } from '../../core/models/message.model';
 import { ChatRoomListComponent } from './chat-room-list/chat-room-list.component';
 import { ChatWindowComponent } from './chat-window/chat-window.component';
+import { IconComponent } from '../../core/components/icon/icon.component';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, AsyncPipe, ChatRoomListComponent, ChatWindowComponent],
+  imports: [CommonModule, AsyncPipe, ChatRoomListComponent, ChatWindowComponent, IconComponent],
   templateUrl: './chat.component.html',
   styleUrl: './chat.component.css'
 })

@@ -5,11 +5,12 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../core/services/auth.service';
 import { GoogleSigninButtonModule, SocialAuthService } from '@abacritt/angularx-social-login';
 import { Subscription } from 'rxjs';
+import { IconComponent } from '../../../core/components/icon/icon.component';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [FormsModule, RouterLink, CommonModule, GoogleSigninButtonModule],
+  imports: [FormsModule, RouterLink, CommonModule, GoogleSigninButtonModule, IconComponent],
   templateUrl: './register.component.html',
   styleUrl: './register.component.css'
 })
