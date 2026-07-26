@@ -77,6 +77,10 @@ namespace ChatAppBackend.Data
                       .WithMany(u => u.Messages)
                       .HasForeignKey(m => m.SenderId)
                       .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(m => m.ReplyToMessage)
+                      .WithMany()
+                      .HasForeignKey(m => m.ReplyToMessageId)
+                      .OnDelete(DeleteBehavior.NoAction);
 
                 // Composite index for fast history queries
                 entity.HasIndex(m => new { m.ChatRoomId, m.SentAt });

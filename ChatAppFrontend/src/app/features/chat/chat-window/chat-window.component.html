@@ -40,6 +40,7 @@
       }
 
       <div class="message-wrapper"
+        [id]="'msg-' + message.id"
         [class.message-own]="isOwnMessage(message)">
 
         @if (!isOwnMessage(message)) {
@@ -59,6 +60,16 @@
             (touchstart)="onTouchStart($event, message)"
             (touchend)="cancelLongPress()"
             (touchmove)="cancelLongPress()">
+
+            @if (message.replyTo) {
+              <div class="reply-quote" (click)="scrollToMessage(message.replyTo.id)">
+                <span class="reply-quote-sender">{{ message.replyTo.senderUserName }}</span>
+                <span class="reply-quote-text">
+                  {{ message.replyTo.isDeleted ? 'This message was deleted' : message.replyTo.content }}
+                </span>
+              </div>
+            }
+
             {{ message.isDeleted ? 'This message was deleted' : message.content }}
           </div>
           <span class="message-time">{{ formatTime(message.sentAt) }}</span>
@@ -78,7 +89,18 @@
     <div #messagesEnd></div>
   </div>
 
-  <!-- Message input -->
+  @if (replyingTo(); as replyMsg) {
+    <div class="reply-preview-bar">
+      <div class="reply-preview-info">
+        <span class="reply-preview-label">Replying to {{ replyMsg.senderUserName }}</span>
+        <span class="reply-preview-text">{{ replyMsg.content }}</span>
+      </div>
+      <button class="btn-icon" (click)="cancelReply()">
+        <app-icon name="close" [size]="16"></app-icon>
+      </button>
+    </div>
+  }
+
   <app-message-input
     (messageSent)="onSendMessage($event)"
     (typingChanged)="onTyping($event)"
@@ -96,9 +118,15 @@
 @if (contextMenu(); as menu) {
   <div class="context-menu-backdrop" (click)="closeContextMenu()"></div>
   <div class="context-menu" [style.left.px]="menu.x" [style.top.px]="menu.y">
-    <button class="context-menu-item context-menu-danger" (click)="deleteMessage()">
-      <app-icon name="trash" [size]="16"></app-icon>
-      <span>Delete Message</span>
+    <button class="context-menu-item" (click)="startReply()">
+      <app-icon name="reply" [size]="16"></app-icon>
+      <span>Reply</span>
     </button>
+    @if (isOwnMessage(menu.message)) {
+      <button class="context-menu-item context-menu-danger" (click)="deleteMessage()">
+        <app-icon name="trash" [size]="16"></app-icon>
+        <span>Delete Message</span>
+      </button>
+    }
   </div>
 }

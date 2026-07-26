@@ -12,5 +12,6 @@ namespace ChatAppBackend.DTOs.Messages
         public DateTime SentAt { get; set; }
         public DateTime? EditedAt { get; set; }
         public bool IsDeleted { get; set; }
+        public ReplyPreviewDto? ReplyTo { get; set; }
     }
 }

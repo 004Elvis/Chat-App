@@ -153,6 +153,80 @@
   user-select: none;
 }
 
+.reply-quote {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  border-left: 3px solid currentColor;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0.9;
+}
+
+.bubble-own .reply-quote {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.reply-quote-sender {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.reply-quote-text {
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.message-highlight {
+  animation: highlightPulse 1.5s ease;
+}
+
+@keyframes highlightPulse {
+  0%, 100% { background: transparent; }
+  25% { background: var(--primary-light); border-radius: 12px; }
+}
+
+.reply-preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 16px;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.reply-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+  border-left: 3px solid var(--primary);
+  padding-left: 10px;
+}
+
+.reply-preview-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.reply-preview-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .context-menu-backdrop {
   position: fixed;
   inset: 0;

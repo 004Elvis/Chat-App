@@ -4,7 +4,8 @@ import { CommonModule } from '@angular/common';
 export type IconName =
   | 'settings' | 'edit-profile' | 'add-member' | 'create-group'
   | 'logout' | 'sun' | 'moon' | 'eye' | 'eye-off' | 'search' | 'close' | 'send'
-  | 'new-chat' | 'trash' | 'emoji' | 'app-logo';
+  | 'new-chat' | 'trash' | 'emoji' | 'app-logo'
+  | 'reply';
 
 @Component({
   selector: 'app-icon',
@@ -116,6 +117,10 @@ export type IconName =
           <path d="M3 8a2.2 2.2 0 0 1 2.2-2.2h1.1v4.6H5.2A2.2 2.2 0 0 1 3 8.2z"></path>
           <path d="M18.7 13.5h1.1A2.2 2.2 0 0 1 22 15.7v.2a2.2 2.2 0 0 1-2.2 2.2h-1.1z"></path>
        }
+       @case ('reply') {
+          <path d="M9 14l-5-5 5-5"></path>
+          <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v.5"></path>
+}
       }
     </svg>
   `,

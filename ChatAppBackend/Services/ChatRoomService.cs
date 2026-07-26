@@ -376,29 +376,40 @@ namespace ChatAppBackend.Services
             if (!isMember) return new List<MessageDto>();
 
             var query = _context.Messages
-                .Where(m => m.ChatRoomId == roomId)
-                .Include(m => m.Sender)
-                .OrderByDescending(m => m.SentAt)
-                .AsQueryable();
+    .Where(m => m.ChatRoomId == roomId)
+    .Include(m => m.Sender)
+    .Include(m => m.ReplyToMessage)
+        .ThenInclude(r => r!.Sender)
+    .OrderByDescending(m => m.SentAt)
+    .AsQueryable();
 
-            if (cursor.HasValue)
-                query = query.Where(m => m.Id < cursor.Value);
+if (cursor.HasValue)
+    query = query.Where(m => m.Id < cursor.Value);
 
-            var messages = await query.Take(limit).ToListAsync();
+var messages = await query.Take(limit).ToListAsync();
 
-            return messages.Select(m => new MessageDto
-            {
-                Id = m.Id,
-                ChatRoomId = m.ChatRoomId,
-                SenderId = m.SenderId,
-                SenderUserName = m.Sender.UserName,
-                SenderAvatarUrl = m.Sender.AvatarUrl,
-                Content = m.IsDeleted ? "This message was deleted" : m.Content,
-                MessageType = m.MessageType,
-                SentAt = m.SentAt,
-                EditedAt = m.EditedAt,
-                IsDeleted = m.IsDeleted
-            }).ToList();
+return messages.Select(m => new MessageDto
+{
+    Id = m.Id,
+    ChatRoomId = m.ChatRoomId,
+    SenderId = m.SenderId,
+    SenderUserName = m.Sender.UserName,
+    SenderAvatarUrl = m.Sender.AvatarUrl,
+    Content = m.IsDeleted ? "This message was deleted" : m.Content,
+    MessageType = m.MessageType,
+    SentAt = m.SentAt,
+    EditedAt = m.EditedAt,
+    IsDeleted = m.IsDeleted,
+    ReplyTo = m.ReplyToMessage == null ? null : new ReplyPreviewDto
+    {
+        Id = m.ReplyToMessage.Id,
+        SenderUserName = m.ReplyToMessage.Sender.UserName,
+        Content = m.ReplyToMessage.IsDeleted
+            ? "This message was deleted"
+            : m.ReplyToMessage.Content,
+        IsDeleted = m.ReplyToMessage.IsDeleted
+    }
+}).ToList();
         }
 
         private ChatRoomDto MapToDto(

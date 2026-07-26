@@ -1,3 +1,10 @@
+export interface ReplyPreview {
+  id: number;
+  senderUserName: string;
+  content: string;
+  isDeleted: boolean;
+}
+
 export interface Message {
   id: number;
   chatRoomId: number;
@@ -9,4 +16,5 @@ export interface Message {
   sentAt: string;
   editedAt?: string;
   isDeleted: boolean;
+  replyTo?: ReplyPreview;
 }

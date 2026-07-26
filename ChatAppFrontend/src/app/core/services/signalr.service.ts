@@ -60,13 +60,13 @@ export class SignalRService {
     }
   }
 
-  async sendMessage(roomId: number, content: string): Promise<void> {
-    console.log('SignalR sendMessage called - roomId:', roomId, 'content:', content);
-    console.log('Hub connection state:', this.hubConnection?.state);
-    if (this.hubConnection) {
-      await this.hubConnection.invoke('SendMessage', roomId, content);
-    }
+  async sendMessage(roomId: number, content: string, replyToMessageId?: number): Promise<void> {
+  console.log('SignalR sendMessage called - roomId:', roomId, 'content:', content);
+  console.log('Hub connection state:', this.hubConnection?.state);
+  if (this.hubConnection) {
+    await this.hubConnection.invoke('SendMessage', roomId, content, replyToMessageId ?? null);
   }
+}
 
   async deleteMessage(messageId: number): Promise<void> {
     if (this.hubConnection) {
