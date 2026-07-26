@@ -57,51 +57,86 @@ namespace ChatAppBackend.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        public async Task SendMessage(int roomId, string content)
+        public async Task SendMessage(int roomId, string content, int? replyToMessageId = null)
+{
+    string messageType = "Text";
+    Console.WriteLine($"=== SEND MESSAGE: room={roomId} content={content} ===");
+
+    var userIdStr = GetUserId();
+    Console.WriteLine($"=== USER ID: {userIdStr} ===");
+
+    if (userIdStr == "UNKNOWN")
+    {
+        await Clients.Caller.SendAsync("Error", "Not authenticated");
+        return;
+    }
+
+    var userId = Guid.Parse(userIdStr);
+
+    int? validReplyId = null;
+    if (replyToMessageId.HasValue)
+    {
+        var replyExists = await _context.Messages.AnyAsync(m =>
+            m.Id == replyToMessageId.Value && m.ChatRoomId == roomId);
+        if (replyExists) validReplyId = replyToMessageId;
+    }
+
+    var message = new Message
+    {
+        ChatRoomId = roomId,
+        SenderId = userId,
+        Content = content,
+        MessageType = messageType,
+        SentAt = DateTime.UtcNow,
+        IsDeleted = false,
+        ReplyToMessageId = validReplyId
+    };
+
+    _context.Messages.Add(message);
+    await _context.SaveChangesAsync();
+
+    var sender = await _context.Users.FindAsync(userId);
+
+    ReplyPreviewDto? replyPreview = null;
+    if (validReplyId.HasValue)
+    {
+        var replied = await _context.Messages
+            .Include(m => m.Sender)
+            .FirstOrDefaultAsync(m => m.Id == validReplyId.Value);
+
+        if (replied != null)
         {
-            string messageType = "Text";
-            var userIdStr = GetUserId();
-
-            if (userIdStr == "UNKNOWN")
+            replyPreview = new ReplyPreviewDto
             {
-                await Clients.Caller.SendAsync("Error", "Not authenticated");
-                return;
-            }
-
-            var userId = Guid.Parse(userIdStr);
-
-            var message = new Message
-            {
-                ChatRoomId = roomId,
-                SenderId = userId,
-                Content = content,
-                MessageType = messageType,
-                SentAt = DateTime.UtcNow,
-                IsDeleted = false
+                Id = replied.Id,
+                SenderUserName = replied.Sender.UserName,
+                Content = replied.IsDeleted
+                    ? "This message was deleted"
+                    : replied.Content,
+                IsDeleted = replied.IsDeleted
             };
-
-            _context.Messages.Add(message);
-            await _context.SaveChangesAsync();
-
-            var sender = await _context.Users.FindAsync(userId);
-
-            var messageDto = new MessageDto
-            {
-                Id = message.Id,
-                ChatRoomId = message.ChatRoomId,
-                SenderId = message.SenderId,
-                SenderUserName = sender?.UserName ?? "Unknown",
-                SenderAvatarUrl = sender?.AvatarUrl,
-                Content = message.Content,
-                MessageType = message.MessageType,
-                SentAt = message.SentAt,
-                IsDeleted = false
-            };
-
-            await Clients.Group(roomId.ToString())
-                .SendAsync("ReceiveMessage", messageDto);
         }
+    }
 
+    var messageDto = new MessageDto
+    {
+        Id = message.Id,
+        ChatRoomId = message.ChatRoomId,
+        SenderId = message.SenderId,
+        SenderUserName = sender?.UserName ?? "Unknown",
+        SenderAvatarUrl = sender?.AvatarUrl,
+        Content = message.Content,
+        MessageType = message.MessageType,
+        SentAt = message.SentAt,
+        IsDeleted = false,
+        ReplyTo = replyPreview
+    };
+
+    await Clients.Group(roomId.ToString())
+        .SendAsync("ReceiveMessage", messageDto);
+
+    Console.WriteLine($"=== MESSAGE SAVED AND BROADCAST ===");
+}
         public async Task DeleteMessage(int messageId)
         {
             var userIdStr = GetUserId();

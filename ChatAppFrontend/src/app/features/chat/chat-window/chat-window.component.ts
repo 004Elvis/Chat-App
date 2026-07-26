@@ -30,7 +30,8 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
 
   shouldScroll = false;
   showMembersModal = signal(false);
-  contextMenu = signal<{ messageId: number; x: number; y: number } | null>(null);
+  contextMenu = signal<{ message: Message; x: number; y: number } | null>(null);
+  replyingTo = signal<Message | null>(null);
   private longPressTimer: any;
 
   ngOnChanges(): void {
@@ -121,22 +122,24 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
   async onSendMessage(content: string): Promise<void> {
     console.log('Sending message to room:', this.room?.id, 'content:', content);
     if (content.trim() && this.room) {
-      await this.signalRService.sendMessage(this.room.id, content);
+      const replyId = this.replyingTo()?.id;
+      await this.signalRService.sendMessage(this.room.id, content, replyId);
+      this.replyingTo.set(null);
     }
   }
 
   onMessageContextMenu(event: MouseEvent, message: Message): void {
-    if (!this.isOwnMessage(message) || message.isDeleted) return;
+    if (message.isDeleted) return;
     event.preventDefault();
-    this.contextMenu.set({ messageId: message.id, x: event.clientX, y: event.clientY });
+    this.contextMenu.set({ message, x: event.clientX, y: event.clientY });
   }
 
   onTouchStart(event: TouchEvent, message: Message): void {
-    if (!this.isOwnMessage(message) || message.isDeleted) return;
+    if (message.isDeleted) return;
     const touch = event.touches[0];
     this.longPressTimer = setTimeout(() => {
       this.contextMenu.set({
-        messageId: message.id, x: touch.clientX, y: touch.clientY
+        message, x: touch.clientX, y: touch.clientY
       });
     }, 500);
   }
@@ -149,11 +152,30 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
     this.contextMenu.set(null);
   }
 
+  startReply(): void {
+    const menu = this.contextMenu();
+    if (!menu) return;
+    this.replyingTo.set(menu.message);
+    this.contextMenu.set(null);
+  }
+
+  cancelReply(): void {
+    this.replyingTo.set(null);
+  }
+
   async deleteMessage(): Promise<void> {
     const menu = this.contextMenu();
     if (!menu) return;
-    await this.signalRService.deleteMessage(menu.messageId);
+    await this.signalRService.deleteMessage(menu.message.id);
     this.contextMenu.set(null);
+  }
+
+  scrollToMessage(messageId: number): void {
+    const el = document.getElementById('msg-' + messageId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('message-highlight');
+    setTimeout(() => el.classList.remove('message-highlight'), 1500);
   }
 
   async onTyping(isTyping: boolean): Promise<void> {
