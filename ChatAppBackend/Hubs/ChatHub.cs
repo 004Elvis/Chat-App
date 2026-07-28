@@ -57,9 +57,9 @@ namespace ChatAppBackend.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
-        public async Task SendMessage(int roomId, string content, int? replyToMessageId = null)
+        public async Task SendMessage(int roomId, string content, int? replyToMessageId = null, AttachmentInputDto? attachment = null)
 {
-    string messageType = "Text";
+    string messageType = attachment?.MessageType ?? "Text";
     Console.WriteLine($"=== SEND MESSAGE: room={roomId} content={content} ===");
 
     var userIdStr = GetUserId();
@@ -95,6 +95,30 @@ namespace ChatAppBackend.Hubs
     _context.Messages.Add(message);
     await _context.SaveChangesAsync();
 
+    AttachmentDto? attachmentDto = null;
+    if (attachment != null && !string.IsNullOrEmpty(attachment.FileUrl))
+    {
+        var messageAttachment = new MessageAttachment
+        {
+            MessageId = message.Id,
+            FileUrl = attachment.FileUrl,
+            FileName = attachment.FileName,
+            FileType = attachment.FileType,
+            FileSizeBytes = attachment.FileSizeBytes
+        };
+        _context.MessageAttachments.Add(messageAttachment);
+        await _context.SaveChangesAsync();
+
+        attachmentDto = new AttachmentDto
+        {
+            Id = messageAttachment.Id,
+            FileUrl = messageAttachment.FileUrl,
+            FileName = messageAttachment.FileName,
+            FileType = messageAttachment.FileType,
+            FileSizeBytes = messageAttachment.FileSizeBytes
+        };
+    }
+
     var sender = await _context.Users.FindAsync(userId);
 
     ReplyPreviewDto? replyPreview = null;
@@ -129,7 +153,8 @@ namespace ChatAppBackend.Hubs
         MessageType = message.MessageType,
         SentAt = message.SentAt,
         IsDeleted = false,
-        ReplyTo = replyPreview
+        ReplyTo = replyPreview,
+        Attachment = attachmentDto
     };
 
     await Clients.Group(roomId.ToString())
