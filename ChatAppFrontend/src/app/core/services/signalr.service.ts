@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
 import { BehaviorSubject, Subject } from 'rxjs';
-import { Message } from '../models/message.model';
+import { Message, Attachment } from '../models/message.model';
 import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
@@ -60,11 +60,15 @@ export class SignalRService {
     }
   }
 
-  async sendMessage(roomId: number, content: string, replyToMessageId?: number): Promise<void> {
+  async sendMessage(roomId: number, content: string, replyToMessageId?: number,
+  attachment?: { fileUrl: string; fileName: string; fileType: string;
+    fileSizeBytes: number; messageType: string }): Promise<void> {
   console.log('SignalR sendMessage called - roomId:', roomId, 'content:', content);
   console.log('Hub connection state:', this.hubConnection?.state);
   if (this.hubConnection) {
-    await this.hubConnection.invoke('SendMessage', roomId, content, replyToMessageId ?? null);
+    await this.hubConnection.invoke(
+      'SendMessage', roomId, content, replyToMessageId ?? null, attachment ?? null
+    );
   }
 }
 
