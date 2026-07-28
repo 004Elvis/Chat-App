@@ -6,6 +6,8 @@ namespace ChatAppBackend.Services
     public interface ICloudinaryService
     {
         Task<string> UploadAvatarAsync(Stream fileStream, string fileName, Guid userId);
+        Task<(string Url, string ResourceType)> UploadChatFileAsync(
+            Stream fileStream, string fileName, string contentType, int roomId);
     }
 
     public class CloudinaryService : ICloudinaryService
@@ -29,12 +31,8 @@ namespace ChatAppBackend.Services
             var uploadParams = new ImageUploadParams
             {
                 File = new FileDescription(fileName, fileStream),
-                // One folder per user - re-uploading always overwrites
-                // the same public ID rather than piling up old avatars.
                 PublicId = $"chatapp/avatars/{userId}",
                 Overwrite = true,
-                // Square crop centered on the detected face where possible,
-                // falls back to a normal center crop otherwise.
                 Transformation = new Transformation()
                     .Width(300).Height(300).Crop("fill").Gravity("face")
             };
@@ -45,6 +43,53 @@ namespace ChatAppBackend.Services
                 throw new Exception($"Cloudinary upload failed: {result.Error.Message}");
 
             return result.SecureUrl.ToString();
+        }
+
+        public async Task<(string Url, string ResourceType)> UploadChatFileAsync(
+            Stream fileStream, string fileName, string contentType, int roomId)
+        {
+            var publicId = $"chatapp/rooms/{roomId}/{Guid.NewGuid()}";
+
+            if (contentType.StartsWith("image/"))
+            {
+                var result = await _cloudinary.UploadAsync(new ImageUploadParams
+                {
+                    File = new FileDescription(fileName, fileStream),
+                    PublicId = publicId,
+                    Transformation = new Transformation()
+                        .Width(1600).Height(1600).Crop("limit")
+                });
+
+                if (result.Error != null)
+                    throw new Exception($"Cloudinary upload failed: {result.Error.Message}");
+
+                return (result.SecureUrl.ToString(), "image");
+            }
+
+            if (contentType.StartsWith("video/"))
+            {
+                var result = await _cloudinary.UploadAsync(new VideoUploadParams
+                {
+                    File = new FileDescription(fileName, fileStream),
+                    PublicId = publicId
+                });
+
+                if (result.Error != null)
+                    throw new Exception($"Cloudinary upload failed: {result.Error.Message}");
+
+                return (result.SecureUrl.ToString(), "video");
+            }
+
+            var rawResult = await _cloudinary.UploadAsync(new RawUploadParams
+            {
+                File = new FileDescription(fileName, fileStream),
+                PublicId = publicId
+            });
+
+            if (rawResult.Error != null)
+                throw new Exception($"Cloudinary upload failed: {rawResult.Error.Message}");
+
+            return (rawResult.SecureUrl.ToString(), "raw");
         }
     }
 }

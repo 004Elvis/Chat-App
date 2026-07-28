@@ -380,6 +380,7 @@ namespace ChatAppBackend.Services
     .Include(m => m.Sender)
     .Include(m => m.ReplyToMessage)
         .ThenInclude(r => r!.Sender)
+    .Include(m => m.Attachments)
     .OrderByDescending(m => m.SentAt)
     .AsQueryable();
 
@@ -408,7 +409,15 @@ return messages.Select(m => new MessageDto
             ? "This message was deleted"
             : m.ReplyToMessage.Content,
         IsDeleted = m.ReplyToMessage.IsDeleted
-    }
+    },
+    Attachment = m.Attachments.Select(a => new AttachmentDto
+    {
+        Id = a.Id,
+        FileUrl = a.FileUrl,
+        FileName = a.FileName,
+        FileType = a.FileType,
+        FileSizeBytes = a.FileSizeBytes
+    }).FirstOrDefault()
 }).ToList();
         }
 
@@ -444,6 +453,7 @@ return messages.Select(m => new MessageDto
                     Content = lastMessage.IsDeleted
                         ? "This message was deleted"
                         : lastMessage.Content,
+                    MessageType = lastMessage.MessageType,
                     SentAt = lastMessage.SentAt,
                     IsDeleted = lastMessage.IsDeleted
                 }

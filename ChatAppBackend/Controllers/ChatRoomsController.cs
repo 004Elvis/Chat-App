@@ -1,8 +1,11 @@
 using System.Security.Claims;
+using ChatAppBackend.Data;
 using ChatAppBackend.DTOs.ChatRooms;
+using ChatAppBackend.DTOs.Messages;
 using ChatAppBackend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ChatAppBackend.Controllers
 {
@@ -12,10 +15,17 @@ namespace ChatAppBackend.Controllers
     public class ChatRoomsController : ControllerBase
     {
         private readonly IChatRoomService _chatRoomService;
+        private readonly ICloudinaryService _cloudinaryService;
+        private readonly ApplicationDbContext _context;
 
-        public ChatRoomsController(IChatRoomService chatRoomService)
+        public ChatRoomsController(
+            IChatRoomService chatRoomService,
+            ICloudinaryService cloudinaryService,
+            ApplicationDbContext context)
         {
             _chatRoomService = chatRoomService;
+            _cloudinaryService = cloudinaryService;
+            _context = context;
         }
 
         private Guid GetCurrentUserId() =>
@@ -142,6 +152,126 @@ namespace ChatAppBackend.Controllers
                 .GetMessagesAsync(id, GetCurrentUserId(), cursor, limit);
 
             return Ok(messages);
+        }
+
+        [HttpPost("{id}/attachments")]
+        [RequestSizeLimit(50 * 1024 * 1024)] // 50MB
+        public async Task<IActionResult> UploadAttachment(int id, IFormFile file)
+        {
+            var isMember = await _context.ChatRoomMembers
+                .AnyAsync(m => m.ChatRoomId == id && m.UserId == GetCurrentUserId());
+            if (!isMember)
+                return Forbid();
+
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "No file was uploaded." });
+
+            const long maxSizeBytes = 50 * 1024 * 1024;
+            if (file.Length > maxSizeBytes)
+                return BadRequest(new { message = "File must be smaller than 50MB." });
+
+            var allowedTypes = new[]
+            {
+                "image/jpeg", "image/png", "image/webp", "image/gif",
+                "video/mp4", "video/quicktime", "video/webm",
+                "application/pdf",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "application/vnd.ms-excel",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "application/vnd.ms-powerpoint",
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "text/plain"
+            };
+
+            if (!allowedTypes.Contains(file.ContentType))
+                return BadRequest(new { message =
+                    "That file type isn't supported. Try an image, video, PDF, or common document format." });
+
+            string messageType = file.ContentType.StartsWith("image/") ? "Image"
+                : file.ContentType.StartsWith("video/") ? "Video"
+                : "Document";
+
+            try
+            {
+                using var stream = file.OpenReadStream();
+                var (url, _) = await _cloudinaryService.UploadChatFileAsync(
+                    stream, file.FileName, file.ContentType, id);
+
+                return Ok(new AttachmentUploadResultDto
+                {
+                    FileUrl = url,
+                    FileName = file.FileName,
+                    FileType = file.ContentType,
+                    FileSizeBytes = file.Length,
+                    MessageType = messageType
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Attachment upload error: {ex.Message}");
+                return StatusCode(500, new { message =
+                    "Could not upload the file right now. Please try again." });
+            }
+        }
+
+        [HttpGet("{id}/media")]
+        public async Task<IActionResult> GetRoomMedia(int id)
+        {
+            var userId = GetCurrentUserId();
+            var isMember = await _context.ChatRoomMembers
+                .AnyAsync(m => m.ChatRoomId == id && m.UserId == userId);
+            if (!isMember)
+                return Forbid();
+
+            var messages = await _context.Messages
+                .Where(m => m.ChatRoomId == id && !m.IsDeleted)
+                .Include(m => m.Sender)
+                .Include(m => m.Attachments)
+                .OrderByDescending(m => m.SentAt)
+                .ToListAsync();
+
+            var result = new RoomMediaDto();
+            var urlPattern = new System.Text.RegularExpressions.Regex(
+                @"(https?://[^\s]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            foreach (var m in messages)
+            {
+                var attachment = m.Attachments.FirstOrDefault();
+                if (attachment != null)
+                {
+                    var item = new MediaItemDto
+                    {
+                        MessageId = m.Id,
+                        FileUrl = attachment.FileUrl,
+                        FileName = attachment.FileName,
+                        FileType = attachment.FileType,
+                        FileSizeBytes = attachment.FileSizeBytes,
+                        SenderUserName = m.Sender.UserName,
+                        SentAt = m.SentAt
+                    };
+
+                    if (m.MessageType == "Image") result.Images.Add(item);
+                    else if (m.MessageType == "Video") result.Videos.Add(item);
+                    else result.Documents.Add(item);
+                }
+                else if (!string.IsNullOrWhiteSpace(m.Content))
+                {
+                    foreach (System.Text.RegularExpressions.Match match in urlPattern.Matches(m.Content))
+                    {
+                        result.Links.Add(new LinkItemDto
+                        {
+                            MessageId = m.Id,
+                            Url = match.Value,
+                            MessageContent = m.Content,
+                            SenderUserName = m.Sender.UserName,
+                            SentAt = m.SentAt
+                        });
+                    }
+                }
+            }
+
+            return Ok(result);
         }
     }
 }
