@@ -5,6 +5,14 @@ export interface ReplyPreview {
   isDeleted: boolean;
 }
 
+export interface Attachment {
+  id?: number;
+  fileUrl: string;
+  fileName: string;
+  fileType: string;
+  fileSizeBytes: number;
+}
+
 export interface Message {
   id: number;
   chatRoomId: number;
@@ -17,4 +25,5 @@ export interface Message {
   editedAt?: string;
   isDeleted: boolean;
   replyTo?: ReplyPreview;
+  attachment?: Attachment;
 }

@@ -90,11 +90,19 @@ export class ChatRoomListComponent implements OnChanges {
   }
 
   getLastMessagePreview(room: ChatRoom): string {
-    if (!room.lastMessage) return 'No messages yet';
-    if (room.lastMessage.isDeleted) return 'Message deleted';
-    const preview = room.lastMessage.content;
-    return preview.length > 35 ? preview.slice(0, 35) + '...' : preview;
+  if (!room.lastMessage) return 'No messages yet';
+  if (room.lastMessage.isDeleted) return 'Message deleted';
+
+  const msg = room.lastMessage;
+  if (!msg.content) {
+    if (msg.messageType === 'Image') return '📷 Photo';
+    if (msg.messageType === 'Video') return '🎥 Video';
+    if (msg.messageType === 'Document') return '📄 Document';
   }
+
+  const preview = msg.content;
+  return preview.length > 35 ? preview.slice(0, 35) + '...' : preview;
+}
 
   formatTime(dateStr: string): string {
     const date = new Date(dateStr);

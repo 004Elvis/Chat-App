@@ -21,6 +21,9 @@
         </span>
       }
     </div>
+    <button class="btn-icon" title="Media, Docs & Links" (click)="showMediaModal.set(true)">
+      <app-icon name="image" [size]="20"></app-icon>
+    </button>
   </div>
 
   <!-- Messages -->
@@ -53,25 +56,69 @@
           @if (showSenderName(i, message)) {
             <span class="message-sender">{{ message.senderUserName }}</span>
           }
-          <div class="message-bubble"
-            [class.bubble-own]="isOwnMessage(message)"
-            [class.bubble-deleted]="message.isDeleted"
-            (contextmenu)="onMessageContextMenu($event, message)"
-            (touchstart)="onTouchStart($event, message)"
-            (touchend)="cancelLongPress()"
-            (touchmove)="cancelLongPress()">
 
-            @if (message.replyTo) {
-              <div class="reply-quote" (click)="scrollToMessage(message.replyTo.id)">
-                <span class="reply-quote-sender">{{ message.replyTo.senderUserName }}</span>
-                <span class="reply-quote-text">
-                  {{ message.replyTo.isDeleted ? 'This message was deleted' : message.replyTo.content }}
-                </span>
-              </div>
-            }
+          @if (message.attachment && !message.isDeleted) {
+            <div class="attachment-bubble"
+              [class.bubble-own]="isOwnMessage(message)"
+              (contextmenu)="onMessageContextMenu($event, message)"
+              (touchstart)="onTouchStart($event, message)"
+              (touchend)="cancelLongPress()"
+              (touchmove)="cancelLongPress()">
 
-            {{ message.isDeleted ? 'This message was deleted' : message.content }}
-          </div>
+              @if (message.replyTo) {
+                <div class="reply-quote" (click)="scrollToMessage(message.replyTo.id)">
+                  <span class="reply-quote-sender">{{ message.replyTo.senderUserName }}</span>
+                  <span class="reply-quote-text">
+                    {{ message.replyTo.isDeleted ? 'This message was deleted' : message.replyTo.content }}
+                  </span>
+                </div>
+              }
+
+              @if (message.messageType === 'Image') {
+                <a [href]="message.attachment.fileUrl" target="_blank" rel="noopener">
+                  <img class="attachment-image" [src]="message.attachment.fileUrl" [alt]="message.attachment.fileName" />
+                </a>
+              } @else if (message.messageType === 'Video') {
+                <video class="attachment-video" [src]="message.attachment.fileUrl" controls></video>
+              } @else {
+                <a class="attachment-doc" [href]="message.attachment.fileUrl" target="_blank" rel="noopener">
+                  <div class="attachment-doc-icon">
+                    <app-icon name="document" [size]="22"></app-icon>
+                  </div>
+                  <div class="attachment-doc-info">
+                    <span class="attachment-doc-name">{{ message.attachment.fileName }}</span>
+                    <span class="attachment-doc-size">{{ formatFileSize(message.attachment.fileSizeBytes) }}</span>
+                  </div>
+                  <app-icon name="download" [size]="18"></app-icon>
+                </a>
+              }
+
+              @if (message.content) {
+                <p class="attachment-caption">{{ message.content }}</p>
+              }
+            </div>
+          } @else {
+            <div class="message-bubble"
+              [class.bubble-own]="isOwnMessage(message)"
+              [class.bubble-deleted]="message.isDeleted"
+              (contextmenu)="onMessageContextMenu($event, message)"
+              (touchstart)="onTouchStart($event, message)"
+              (touchend)="cancelLongPress()"
+              (touchmove)="cancelLongPress()">
+
+              @if (message.replyTo) {
+                <div class="reply-quote" (click)="scrollToMessage(message.replyTo.id)">
+                  <span class="reply-quote-sender">{{ message.replyTo.senderUserName }}</span>
+                  <span class="reply-quote-text">
+                    {{ message.replyTo.isDeleted ? 'This message was deleted' : message.replyTo.content }}
+                  </span>
+                </div>
+              }
+
+              {{ message.isDeleted ? 'This message was deleted' : message.content }}
+            </div>
+          }
+
           <span class="message-time">{{ formatTime(message.sentAt) }}</span>
         </div>
       </div>
@@ -93,7 +140,7 @@
     <div class="reply-preview-bar">
       <div class="reply-preview-info">
         <span class="reply-preview-label">Replying to {{ replyMsg.senderUserName }}</span>
-        <span class="reply-preview-text">{{ replyMsg.content }}</span>
+        <span class="reply-preview-text">{{ replyMsg.content || replyMsg.messageType }}</span>
       </div>
       <button class="btn-icon" (click)="cancelReply()">
         <app-icon name="close" [size]="16"></app-icon>
@@ -102,7 +149,9 @@
   }
 
   <app-message-input
+    [roomId]="room.id"
     (messageSent)="onSendMessage($event)"
+    (attachmentSent)="onAttachmentSent($event)"
     (typingChanged)="onTyping($event)"
   />
 </div>
@@ -112,6 +161,13 @@
     [room]="room"
     [currentUser]="currentUser"
     (closed)="showMembersModal.set(false)"
+  />
+}
+
+@if (showMediaModal()) {
+  <app-room-media-modal
+    [roomId]="room.id"
+    (closed)="showMediaModal.set(false)"
   />
 }
 

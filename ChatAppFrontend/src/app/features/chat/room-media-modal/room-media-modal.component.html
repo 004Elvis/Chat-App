@@ -1,0 +1,111 @@
+<div class="modal-overlay" (click)="close()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Media, Docs & Links</h2>
+      <button class="btn-icon" (click)="close()">
+        <app-icon name="close" [size]="18"></app-icon>
+      </button>
+    </div>
+
+    <div class="media-tabs">
+      <button class="media-tab" [class.media-tab-active]="activeTab() === 'images'" (click)="setTab('images')">
+        <app-icon name="image" [size]="16"></app-icon>
+        <span>Images ({{ media().images.length }})</span>
+      </button>
+      <button class="media-tab" [class.media-tab-active]="activeTab() === 'videos'" (click)="setTab('videos')">
+        <app-icon name="video" [size]="16"></app-icon>
+        <span>Videos ({{ media().videos.length }})</span>
+      </button>
+      <button class="media-tab" [class.media-tab-active]="activeTab() === 'documents'" (click)="setTab('documents')">
+        <app-icon name="document" [size]="16"></app-icon>
+        <span>Docs ({{ media().documents.length }})</span>
+      </button>
+      <button class="media-tab" [class.media-tab-active]="activeTab() === 'links'" (click)="setTab('links')">
+        <app-icon name="link" [size]="16"></app-icon>
+        <span>Links ({{ media().links.length }})</span>
+      </button>
+    </div>
+
+    <div class="media-content">
+      @if (loading()) {
+        <p class="media-empty">Loading...</p>
+      } @else if (error()) {
+        <p class="media-empty">{{ error() }}</p>
+      } @else {
+
+        @if (activeTab() === 'images') {
+          @if (media().images.length === 0) {
+            <p class="media-empty">No images shared yet.</p>
+          } @else {
+            <div class="media-grid">
+              @for (item of media().images; track item.messageId) {
+                <a [href]="item.fileUrl" target="_blank" rel="noopener" class="media-grid-item">
+                  <img [src]="item.fileUrl" [alt]="item.fileName" />
+                </a>
+              }
+            </div>
+          }
+        }
+
+        @if (activeTab() === 'videos') {
+          @if (media().videos.length === 0) {
+            <p class="media-empty">No videos shared yet.</p>
+          } @else {
+            <div class="media-grid">
+              @for (item of media().videos; track item.messageId) {
+                <a [href]="item.fileUrl" target="_blank" rel="noopener" class="media-grid-item media-grid-video">
+                  <video [src]="item.fileUrl"></video>
+                  <app-icon name="video" [size]="20" class="video-play-badge"></app-icon>
+                </a>
+              }
+            </div>
+          }
+        }
+
+        @if (activeTab() === 'documents') {
+          @if (media().documents.length === 0) {
+            <p class="media-empty">No documents shared yet.</p>
+          } @else {
+            <div class="media-list">
+              @for (item of media().documents; track item.messageId) {
+                <a [href]="item.fileUrl" target="_blank" rel="noopener" class="media-list-item">
+                  <div class="doc-badge">{{ getFileExtension(item.fileName) }}</div>
+                  <div class="media-list-info">
+                    <span class="media-list-name">{{ item.fileName }}</span>
+                    <span class="media-list-meta">
+                      {{ item.senderUserName }} · {{ formatDate(item.sentAt) }} · {{ formatFileSize(item.fileSizeBytes) }}
+                    </span>
+                  </div>
+                  <app-icon name="download" [size]="18"></app-icon>
+                </a>
+              }
+            </div>
+          }
+        }
+
+        @if (activeTab() === 'links') {
+          @if (media().links.length === 0) {
+            <p class="media-empty">No links shared yet.</p>
+          } @else {
+            <div class="media-list">
+              @for (item of media().links; track item.messageId) {
+                <a [href]="item.url" target="_blank" rel="noopener" class="media-list-item">
+                  <div class="doc-badge doc-badge-link">
+                    <app-icon name="link" [size]="16"></app-icon>
+                  </div>
+                  <div class="media-list-info">
+                    <span class="media-list-name">{{ item.url }}</span>
+                    <span class="media-list-meta">
+                      {{ item.senderUserName }} · {{ formatDate(item.sentAt) }}
+                    </span>
+                  </div>
+                </a>
+              }
+            </div>
+          }
+        }
+
+      }
+    </div>
+  </div>
+</div>

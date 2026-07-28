@@ -1,9 +1,18 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpEvent, HttpEventType } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ChatRoom } from '../models/chat-room.model';
 import { Message } from '../models/message.model';
+import { RoomMedia } from '../models/room-media.model';
 import { environment } from '../../../environments/environment';
+
+export interface AttachmentUploadResult {
+  fileUrl: string;
+  fileName: string;
+  fileType: string;
+  fileSizeBytes: number;
+  messageType: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ChatService {
@@ -52,5 +61,19 @@ export class ChatService {
     return this.http.get<Message[]>(
       `${this.API}/${roomId}/messages${params}`
     );
+  }
+
+  uploadAttachment(roomId: number, file: File): Observable<HttpEvent<AttachmentUploadResult>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<AttachmentUploadResult>(
+      `${this.API}/${roomId}/attachments`,
+      formData,
+      { reportProgress: true, observe: 'events' }
+    );
+  }
+
+  getRoomMedia(roomId: number): Observable<RoomMedia> {
+    return this.http.get<RoomMedia>(`${this.API}/${roomId}/media`);
   }
 }

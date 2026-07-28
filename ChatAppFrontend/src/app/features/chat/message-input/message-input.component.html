@@ -1,5 +1,49 @@
 <div class="message-input-container">
+  @if (uploading()) {
+    <div class="upload-progress-bar">
+      <div class="upload-progress-fill" [style.width.%]="uploadProgress()"></div>
+      <span class="upload-progress-text">Uploading... {{ uploadProgress() }}%</span>
+    </div>
+  }
+
+  @if (uploadError()) {
+    <div class="upload-error">{{ uploadError() }}</div>
+  }
+
   <div class="message-input-wrapper">
+    <div class="attach-btn-wrapper">
+      <button
+        class="btn-icon"
+        type="button"
+        title="Attach"
+        [disabled]="uploading()"
+        (click)="toggleAttachMenu()">
+        <app-icon name="attach" [size]="20"></app-icon>
+      </button>
+
+      @if (showAttachMenu()) {
+        <div class="attach-menu-backdrop" (click)="showAttachMenu.set(false)"></div>
+        <div class="attach-menu">
+          <button class="attach-menu-item" (click)="triggerMediaPicker()">
+            <app-icon name="image" [size]="18"></app-icon>
+            <span>Photo / Video</span>
+          </button>
+          <button class="attach-menu-item" (click)="triggerDocumentPicker()">
+            <app-icon name="document" [size]="18"></app-icon>
+            <span>Document</span>
+          </button>
+          <button class="attach-menu-item" (click)="triggerCamera()">
+            <app-icon name="camera" [size]="18"></app-icon>
+            <span>Scan Document</span>
+          </button>
+        </div>
+      }
+
+      <input #mediaInput type="file" accept="image/*,video/*" style="display:none" (change)="onFileSelected($event)" />
+      <input #documentInput type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" style="display:none" (change)="onFileSelected($event)" />
+      <input #cameraInput type="file" accept="image/*" capture="environment" style="display:none" (change)="onFileSelected($event)" />
+    </div>
+
     <div class="emoji-btn-wrapper">
       <button
         class="btn-icon emoji-toggle-btn"

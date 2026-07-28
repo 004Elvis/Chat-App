@@ -9,12 +9,13 @@ import { User } from '../../../core/models/user.model';
 import { SignalRService } from '../../../core/services/signalr.service';
 import { MessageInputComponent } from '../message-input/message-input.component';
 import { GroupMembersModalComponent } from '../group-members-modal/group-members-modal.component';
+import { RoomMediaModalComponent } from '../room-media-modal/room-media-modal.component';
 import { IconComponent } from '../../../core/components/icon/icon.component';
 
 @Component({
   selector: 'app-chat-window',
   standalone: true,
-  imports: [CommonModule, FormsModule, MessageInputComponent, GroupMembersModalComponent, IconComponent],
+  imports: [CommonModule, FormsModule, MessageInputComponent, GroupMembersModalComponent, RoomMediaModalComponent, IconComponent],
   templateUrl: './chat-window.component.html',
   styleUrl: './chat-window.component.css'
 })
@@ -30,6 +31,7 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
 
   shouldScroll = false;
   showMembersModal = signal(false);
+  showMediaModal = signal(false);
   contextMenu = signal<{ message: Message; x: number; y: number } | null>(null);
   replyingTo = signal<Message | null>(null);
   private longPressTimer: any;
@@ -57,6 +59,13 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
 
   getInitials(name: string): string {
     return (name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  }
+
+  formatFileSize(bytes: number): string {
+    if (!bytes) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   getOtherMember(): User | null {
@@ -126,6 +135,16 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
       await this.signalRService.sendMessage(this.room.id, content, replyId);
       this.replyingTo.set(null);
     }
+  }
+
+  async onAttachmentSent(attachment: {
+    fileUrl: string; fileName: string; fileType: string;
+    fileSizeBytes: number; messageType: string;
+  }): Promise<void> {
+    if (!this.room) return;
+    const replyId = this.replyingTo()?.id;
+    await this.signalRService.sendMessage(this.room.id, '', replyId, attachment);
+    this.replyingTo.set(null);
   }
 
   onMessageContextMenu(event: MouseEvent, message: Message): void {

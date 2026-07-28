@@ -4,8 +4,8 @@ import { CommonModule } from '@angular/common';
 export type IconName =
   | 'settings' | 'edit-profile' | 'add-member' | 'create-group'
   | 'logout' | 'sun' | 'moon' | 'eye' | 'eye-off' | 'search' | 'close' | 'send'
-  | 'new-chat' | 'trash' | 'emoji' | 'app-logo'
-  | 'reply';
+  | 'new-chat' | 'trash' | 'emoji' | 'app-logo' | 'reply'
+  | 'attach' | 'camera' | 'document' | 'image' | 'video' | 'link' | 'download';
 
 @Component({
   selector: 'app-icon',
@@ -116,11 +116,43 @@ export type IconName =
           <path d="M9.5 13h3"></path>
           <path d="M3 8a2.2 2.2 0 0 1 2.2-2.2h1.1v4.6H5.2A2.2 2.2 0 0 1 3 8.2z"></path>
           <path d="M18.7 13.5h1.1A2.2 2.2 0 0 1 22 15.7v.2a2.2 2.2 0 0 1-2.2 2.2h-1.1z"></path>
-       }
-       @case ('reply') {
+        }
+        @case ('reply') {
           <path d="M9 14l-5-5 5-5"></path>
           <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v.5"></path>
-}
+        }
+        @case ('attach') {
+          <path d="M21.4 11.1l-9.2 9.2a5 5 0 0 1-7.1-7.1l9.2-9.2a3.5 3.5 0 0 1 5 5l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"></path>
+        }
+        @case ('camera') {
+          <path d="M4 8a2 2 0 0 1 2-2h1.2l1-1.6A1.5 1.5 0 0 1 9.5 3.6h5a1.5 1.5 0 0 1 1.3.8l1 1.6H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"></path>
+          <circle cx="12" cy="13" r="3.5"></circle>
+        }
+        @case ('document') {
+          <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <path d="M14 3v5h5"></path>
+          <path d="M9 13h6"></path>
+          <path d="M9 17h6"></path>
+        }
+        @case ('image') {
+          <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+          <circle cx="8.5" cy="9.5" r="1.75"></circle>
+          <path d="M21 15.5l-5.5-5.5-9 9"></path>
+        }
+        @case ('video') {
+          <rect x="2.5" y="6" width="13" height="12" rx="2"></rect>
+          <path d="M15.5 10.5l6-3.5v10l-6-3.5z"></path>
+        }
+        @case ('link') {
+          <path d="M9.5 14.5l5-5"></path>
+          <path d="M7.5 12l-1.8 1.8a3.5 3.5 0 0 0 5 5L12.5 17"></path>
+          <path d="M16.5 12l1.8-1.8a3.5 3.5 0 0 0-5-5L11.5 7"></path>
+        }
+        @case ('download') {
+          <path d="M12 3v12"></path>
+          <path d="M7 10l5 5 5-5"></path>
+          <path d="M4 20h16"></path>
+        }
       }
     </svg>
   `,
