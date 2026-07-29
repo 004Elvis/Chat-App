@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter,
   OnChanges, ViewChild, ElementRef, AfterViewChecked,
-  signal } from '@angular/core';
+  signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChatRoom } from '../../../core/models/chat-room.model';
@@ -11,6 +11,8 @@ import { MessageInputComponent } from '../message-input/message-input.component'
 import { GroupMembersModalComponent } from '../group-members-modal/group-members-modal.component';
 import { RoomMediaModalComponent } from '../room-media-modal/room-media-modal.component';
 import { IconComponent } from '../../../core/components/icon/icon.component';
+import { BackgroundPickerModalComponent } from '../background-picker-modal/background-picker-modal.component';
+import { ChatBackgroundService } from '../../../core/services/chat-background.service';
 
 @Component({
   selector: 'app-chat-window',
@@ -31,14 +33,22 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
 
   shouldScroll = false;
   showMembersModal = signal(false);
-  showMediaModal = signal(false);
-  contextMenu = signal<{ message: Message; x: number; y: number } | null>(null);
-  replyingTo = signal<Message | null>(null);
-  private longPressTimer: any;
+showMediaModal = signal(false);
+contextMenu = signal<{ message: Message; x: number; y: number } | null>(null);
+replyingTo = signal<Message | null>(null);
+private longPressTimer: any;
 
-  ngOnChanges(): void {
-    this.shouldScroll = true;
-  }
+constructor(private bgService: ChatBackgroundService) {}
+
+// Reactive instead of manually refreshed - now the background updates
+// automatically no matter where it's changed from (Settings menu, etc.)
+currentBackground = computed(() =>
+  this.room ? this.bgService.getBackgroundFor(this.room.id) : null
+);
+
+ngOnChanges(): void {
+  this.shouldScroll = true;
+}
 
   ngAfterViewChecked(): void {
     if (this.shouldScroll) {

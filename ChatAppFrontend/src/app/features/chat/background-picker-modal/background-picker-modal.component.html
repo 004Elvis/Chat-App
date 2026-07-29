@@ -1,0 +1,43 @@
+<div class="modal-overlay" (click)="close()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Chat Background</h2>
+      <button class="btn-icon" (click)="close()">
+        <app-icon name="close" [size]="18"></app-icon>
+      </button>
+    </div>
+
+    @if (uploadError()) {
+      <p class="bg-error">{{ uploadError() }}</p>
+    }
+
+    <div class="preset-grid">
+      @for (preset of bgService.presets; track preset.id) {
+        <button
+          class="preset-swatch"
+          [style.background]="preset.css || 'var(--bg)'"
+          [title]="preset.label"
+          (click)="choosePreset(preset.id)">
+          @if (preset.id === 'default') {
+            <span class="preset-default-label">None</span>
+          }
+        </button>
+      }
+    </div>
+
+    <label class="upload-btn" [class.upload-btn-disabled]="uploading()">
+      @if (uploading()) {
+        <span class="spinner"></span>
+        <span>Uploading...</span>
+      } @else {
+        <app-icon name="image" [size]="18"></app-icon>
+        <span>Upload Custom Image</span>
+      }
+      <input type="file" accept="image/*" style="display:none" [disabled]="uploading()" (change)="onFileSelected($event)" />
+    </label>
+
+    <button class="btn btn-secondary reset-btn" (click)="resetBackground()">
+      Reset to Default
+    </button>
+  </div>
+</div>
