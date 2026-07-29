@@ -21,13 +21,14 @@
         </span>
       }
     </div>
+    
     <button class="btn-icon" title="Media, Docs & Links" (click)="showMediaModal.set(true)">
       <app-icon name="image" [size]="20"></app-icon>
     </button>
   </div>
 
   <!-- Messages -->
-  <div class="messages-container">
+  <div class="messages-container" [style.background-image]="currentBackground()">
     @if (messages.length === 0) {
       <div class="no-messages">
         <span>👋</span>
@@ -170,6 +171,8 @@
     (closed)="showMediaModal.set(false)"
   />
 }
+
+
 
 @if (contextMenu(); as menu) {
   <div class="context-menu-backdrop" (click)="closeContextMenu()"></div>

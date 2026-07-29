@@ -5,8 +5,8 @@ export type IconName =
   | 'settings' | 'edit-profile' | 'add-member' | 'create-group'
   | 'logout' | 'sun' | 'moon' | 'eye' | 'eye-off' | 'search' | 'close' | 'send'
   | 'new-chat' | 'trash' | 'emoji' | 'app-logo' | 'reply'
-  | 'attach' | 'camera' | 'document' | 'image' | 'video' | 'link' | 'download';
-
+  | 'attach' | 'camera' | 'document' | 'image' | 'video' | 'link' | 'download'
+  | 'palette';
 @Component({
   selector: 'app-icon',
   standalone: true,
@@ -153,6 +153,12 @@ export type IconName =
           <path d="M7 10l5 5 5-5"></path>
           <path d="M4 20h16"></path>
         }
+        @case ('palette') {
+          <path d="M12 21a9 9 0 1 1 0-18c4.5 0 8.5 3.2 8.5 7 0 2.2-1.8 3.5-3.5 3.5h-2a1.8 1.8 0 0 0-1.3 3.1c.4.4.6.9.6 1.4 0 1.1-.9 2-2.3 2z"></path>
+          <circle cx="7.5" cy="11" r="1.2"></circle>
+          <circle cx="10.5" cy="7" r="1.2"></circle>
+          <circle cx="15" cy="7.5" r="1.2"></circle>
+}
       }
     </svg>
   `,

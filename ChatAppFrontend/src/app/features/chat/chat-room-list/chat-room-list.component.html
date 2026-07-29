@@ -10,7 +10,7 @@
     <span class="sidebar-username">{{ currentUser?.userName }}</span>
   </div>
   <div class="sidebar-actions">
-    <app-settings-menu></app-settings-menu>
+    <app-settings-menu [selectedRoom]="selectedRoom"></app-settings-menu>
 
     <button class="btn-icon" title="New Direct Message"
       (click)="toggleNewDm()">
