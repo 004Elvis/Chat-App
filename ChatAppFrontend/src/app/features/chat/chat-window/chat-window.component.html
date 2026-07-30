@@ -81,6 +81,8 @@
                 </a>
               } @else if (message.messageType === 'Video') {
                 <video class="attachment-video" [src]="message.attachment.fileUrl" controls></video>
+              } @else if (message.messageType === 'VoiceNote') {
+                <audio class="attachment-audio" [src]="message.attachment.fileUrl" controls></audio>
               } @else {
                 <a class="attachment-doc" [href]="message.attachment.fileUrl" target="_blank" rel="noopener">
                   <div class="attachment-doc-icon">

@@ -174,6 +174,7 @@ namespace ChatAppBackend.Controllers
             {
                 "image/jpeg", "image/png", "image/webp", "image/gif",
                 "video/mp4", "video/quicktime", "video/webm",
+                "audio/webm", "audio/mp4", "audio/ogg", "audio/mpeg", "audio/wav", "audio/aac",
                 "application/pdf",
                 "application/msword",
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -184,14 +185,16 @@ namespace ChatAppBackend.Controllers
                 "text/plain"
             };
 
-            if (!allowedTypes.Contains(file.ContentType))
+           var baseContentType = file.ContentType.Split(';')[0].Trim();
+
+            if (!allowedTypes.Contains(baseContentType))
                 return BadRequest(new { message =
                     "That file type isn't supported. Try an image, video, PDF, or common document format." });
 
-            string messageType = file.ContentType.StartsWith("image/") ? "Image"
-                : file.ContentType.StartsWith("video/") ? "Video"
+                string messageType = baseContentType.StartsWith("image/") ? "Image"
+                : baseContentType.StartsWith("video/") ? "Video"
+                : baseContentType.StartsWith("audio/") ? "VoiceNote"
                 : "Document";
-
             try
             {
                 using var stream = file.OpenReadStream();

@@ -1,5 +1,5 @@
 import { Component, Output, EventEmitter, Input, signal,
-  ViewChild, ElementRef } from '@angular/core';
+  ViewChild, ElementRef, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { HttpEventType } from '@angular/common/http';
@@ -14,7 +14,7 @@ import { ChatService, AttachmentUploadResult } from '../../../core/services/chat
   templateUrl: './message-input.component.html',
   styleUrl: './message-input.component.css'
 })
-export class MessageInputComponent {
+export class MessageInputComponent implements OnDestroy {
   @Input() roomId!: number;
   @Output() messageSent = new EventEmitter<string>();
   @Output() attachmentSent = new EventEmitter<AttachmentUploadResult>();
@@ -34,7 +34,21 @@ export class MessageInputComponent {
   uploadError = signal('');
   private typingTimeout: any;
 
+  // Voice recording state
+  isRecording = signal(false);
+  recordingSeconds = signal(0);
+  private mediaRecorder: MediaRecorder | null = null;
+  private recordedChunks: Blob[] = [];
+  private recordingStream: MediaStream | null = null;
+  private recordingTimer: any;
+  private discardRecording = false;
+
   constructor(private chatService: ChatService) {}
+
+  ngOnDestroy(): void {
+    this.stopStreamTracks();
+    clearInterval(this.recordingTimer);
+  }
 
   onInput(): void {
     if (!this.isTyping() && this.message.trim()) {
@@ -152,5 +166,98 @@ export class MessageInputComponent {
         this.uploadProgress.set(0);
       }
     });
+  }
+
+  // ---------- Voice notes ----------
+
+  async startRecording(): Promise<void> {
+    this.uploadError.set('');
+
+    try {
+      this.recordingStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      this.uploadError.set('Microphone access was denied or is unavailable.');
+      return;
+    }
+
+    const mimeType = this.pickSupportedMimeType();
+    this.mediaRecorder = mimeType
+      ? new MediaRecorder(this.recordingStream, { mimeType })
+      : new MediaRecorder(this.recordingStream);
+
+    this.recordedChunks = [];
+    this.discardRecording = false;
+
+    this.mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) this.recordedChunks.push(e.data);
+    };
+
+    this.mediaRecorder.onstop = () => {
+      this.stopStreamTracks();
+      clearInterval(this.recordingTimer);
+
+      if (this.discardRecording || this.recordedChunks.length === 0) {
+        this.recordedChunks = [];
+        return;
+      }
+
+      const blob = new Blob(this.recordedChunks, { type: this.mediaRecorder?.mimeType || 'audio/webm' });
+      const ext = this.extensionFor(blob.type);
+      const file = new File([blob], `voice-note-${Date.now()}.${ext}`, { type: blob.type });
+      this.recordedChunks = [];
+      this.uploadFile(file);
+    };
+
+    this.mediaRecorder.start();
+    this.isRecording.set(true);
+    this.recordingSeconds.set(0);
+    this.recordingTimer = setInterval(() => {
+      this.recordingSeconds.set(this.recordingSeconds() + 1);
+    }, 1000);
+  }
+
+  stopAndSendRecording(): void {
+    this.discardRecording = false;
+    this.isRecording.set(false);
+    this.mediaRecorder?.stop();
+  }
+
+  cancelRecording(): void {
+    this.discardRecording = true;
+    this.isRecording.set(false);
+    this.mediaRecorder?.stop();
+  }
+
+  get formattedRecordingTime(): string {
+    const total = this.recordingSeconds();
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  private pickSupportedMimeType(): string | null {
+    const candidates = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+      'audio/ogg;codecs=opus'
+    ];
+    for (const type of candidates) {
+      if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported?.(type)) {
+        return type;
+      }
+    }
+    return null;
+  }
+
+  private extensionFor(mimeType: string): string {
+    if (mimeType.includes('mp4')) return 'm4a';
+    if (mimeType.includes('ogg')) return 'ogg';
+    return 'webm';
+  }
+
+  private stopStreamTracks(): void {
+    this.recordingStream?.getTracks().forEach(t => t.stop());
+    this.recordingStream = null;
   }
 }
