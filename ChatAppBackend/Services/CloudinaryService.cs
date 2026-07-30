@@ -66,7 +66,7 @@ namespace ChatAppBackend.Services
                 return (result.SecureUrl.ToString(), "image");
             }
 
-            if (contentType.StartsWith("video/"))
+            if (contentType.StartsWith("video/") || contentType.StartsWith("audio/"))
             {
                 var result = await _cloudinary.UploadAsync(new VideoUploadParams
                 {

@@ -89,7 +89,7 @@ export class ChatRoomListComponent implements OnChanges {
     return undefined;
   }
 
-  getLastMessagePreview(room: ChatRoom): string {
+ getLastMessagePreview(room: ChatRoom): string {
   if (!room.lastMessage) return 'No messages yet';
   if (room.lastMessage.isDeleted) return 'Message deleted';
 
@@ -97,6 +97,7 @@ export class ChatRoomListComponent implements OnChanges {
   if (!msg.content) {
     if (msg.messageType === 'Image') return '📷 Photo';
     if (msg.messageType === 'Video') return '🎥 Video';
+    if (msg.messageType === 'VoiceNote') return '🎤 Voice message';
     if (msg.messageType === 'Document') return '📄 Document';
   }
 

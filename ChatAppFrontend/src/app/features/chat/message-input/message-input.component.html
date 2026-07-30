@@ -10,72 +10,100 @@
     <div class="upload-error">{{ uploadError() }}</div>
   }
 
-  <div class="message-input-wrapper">
-    <div class="attach-btn-wrapper">
-      <button
-        class="btn-icon"
-        type="button"
-        title="Attach"
-        [disabled]="uploading()"
-        (click)="toggleAttachMenu()">
-        <app-icon name="attach" [size]="20"></app-icon>
-      </button>
-
-      @if (showAttachMenu()) {
-        <div class="attach-menu-backdrop" (click)="showAttachMenu.set(false)"></div>
-        <div class="attach-menu">
-          <button class="attach-menu-item" (click)="triggerMediaPicker()">
-            <app-icon name="image" [size]="18"></app-icon>
-            <span>Photo / Video</span>
-          </button>
-          <button class="attach-menu-item" (click)="triggerDocumentPicker()">
-            <app-icon name="document" [size]="18"></app-icon>
-            <span>Document</span>
-          </button>
-          <button class="attach-menu-item" (click)="triggerCamera()">
-            <app-icon name="camera" [size]="18"></app-icon>
-            <span>Scan Document</span>
-          </button>
-        </div>
-      }
-
-      <input #mediaInput type="file" accept="image/*,video/*" style="display:none" (change)="onFileSelected($event)" />
-      <input #documentInput type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" style="display:none" (change)="onFileSelected($event)" />
-      <input #cameraInput type="file" accept="image/*" capture="environment" style="display:none" (change)="onFileSelected($event)" />
+  @if (isRecording()) {
+    <div class="recording-bar">
+      <div class="recording-indicator">
+        <span class="recording-dot"></span>
+        <span>Recording {{ formattedRecordingTime }}</span>
+      </div>
+      <div class="recording-actions">
+        <button class="btn-icon" title="Cancel" (click)="cancelRecording()">
+          <app-icon name="close" [size]="18"></app-icon>
+        </button>
+        <button class="send-btn" title="Send voice note" (click)="stopAndSendRecording()">
+          <app-icon name="send" [size]="18" class="icon-inverted"></app-icon>
+        </button>
+      </div>
     </div>
+  } @else {
+    <div class="message-input-wrapper">
+      <div class="attach-btn-wrapper">
+        <button
+          class="btn-icon"
+          type="button"
+          title="Attach"
+          [disabled]="uploading()"
+          (click)="toggleAttachMenu()">
+          <app-icon name="attach" [size]="20"></app-icon>
+        </button>
 
-    <div class="emoji-btn-wrapper">
-      <button
-        class="btn-icon emoji-toggle-btn"
-        type="button"
-        title="Emoji"
-        (click)="toggleEmojiPicker()">
-        <app-icon name="emoji" [size]="20"></app-icon>
-      </button>
+        @if (showAttachMenu()) {
+          <div class="attach-menu-backdrop" (click)="showAttachMenu.set(false)"></div>
+          <div class="attach-menu">
+            <button class="attach-menu-item" (click)="triggerMediaPicker()">
+              <app-icon name="image" [size]="18"></app-icon>
+              <span>Photo / Video</span>
+            </button>
+            <button class="attach-menu-item" (click)="triggerDocumentPicker()">
+              <app-icon name="document" [size]="18"></app-icon>
+              <span>Document</span>
+            </button>
+            <button class="attach-menu-item" (click)="triggerCamera()">
+              <app-icon name="camera" [size]="18"></app-icon>
+              <span>Scan Document</span>
+            </button>
+          </div>
+        }
 
-      @if (showEmojiPicker()) {
-        <app-emoji-picker
-          (emojiSelected)="onEmojiSelected($event)"
-          (closed)="showEmojiPicker.set(false)"
-        />
+        <input #mediaInput type="file" accept="image/*,video/*" style="display:none" (change)="onFileSelected($event)" />
+        <input #documentInput type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" style="display:none" (change)="onFileSelected($event)" />
+        <input #cameraInput type="file" accept="image/*" capture="environment" style="display:none" (change)="onFileSelected($event)" />
+      </div>
+
+      <div class="emoji-btn-wrapper">
+        <button
+          class="btn-icon emoji-toggle-btn"
+          type="button"
+          title="Emoji"
+          (click)="toggleEmojiPicker()">
+          <app-icon name="emoji" [size]="20"></app-icon>
+        </button>
+
+        @if (showEmojiPicker()) {
+          <app-emoji-picker
+            (emojiSelected)="onEmojiSelected($event)"
+            (closed)="showEmojiPicker.set(false)"
+          />
+        }
+      </div>
+
+      <textarea
+        #messageTextarea
+        class="message-textarea"
+        placeholder="Type a message... (Enter to send)"
+        [(ngModel)]="message"
+        (input)="onInput()"
+        (keydown)="onKeyDown($event)"
+        rows="1"
+      ></textarea>
+
+      @if (message.trim()) {
+        <button
+          class="send-btn"
+          (click)="send()"
+          title="Send message">
+          <app-icon name="send" [size]="18" class="icon-inverted"></app-icon>
+        </button>
+      } @else {
+        <button
+          class="btn-icon mic-btn"
+          type="button"
+          title="Record voice note"
+          [disabled]="uploading()"
+          (click)="startRecording()">
+          <app-icon name="mic" [size]="20"></app-icon>
+        </button>
       }
     </div>
-
-    <textarea
-      #messageTextarea
-      class="message-textarea"
-      placeholder="Type a message... (Enter to send)"
-      [(ngModel)]="message"
-      (input)="onInput()"
-      (keydown)="onKeyDown($event)"
-      rows="1"
-    ></textarea>
-    <button
-      class="send-btn"
-      (click)="send()"
-      [disabled]="!message.trim()"
-      title="Send message">
-      <app-icon name="send" [size]="18" class="icon-inverted"></app-icon>
-    </button>
-  </div>
+  }
 </div>
