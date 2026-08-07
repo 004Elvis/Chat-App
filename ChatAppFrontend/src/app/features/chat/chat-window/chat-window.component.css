@@ -68,6 +68,14 @@
   color: var(--text-secondary);
 }
 
+.chat-header-encrypted {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--success-text, #16a34a);
+}
+
 .messages-container {
   flex: 1;
   overflow-y: auto;

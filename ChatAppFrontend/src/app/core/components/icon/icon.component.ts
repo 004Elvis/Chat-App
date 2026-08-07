@@ -6,7 +6,8 @@ export type IconName =
   | 'logout' | 'sun' | 'moon' | 'eye' | 'eye-off' | 'search' | 'close' | 'send'
   | 'new-chat' | 'trash' | 'emoji' | 'app-logo' | 'reply'
   | 'attach' | 'camera' | 'document' | 'image' | 'video' | 'link' | 'download'
-  | 'palette' | 'mic';
+  | 'palette' | 'mic' | 'lock';
+
 @Component({
   selector: 'app-icon',
   standalone: true,
@@ -158,6 +159,10 @@ export type IconName =
           <circle cx="7.5" cy="11" r="1.2"></circle>
           <circle cx="10.5" cy="7" r="1.2"></circle>
           <circle cx="15" cy="7.5" r="1.2"></circle>
+        }
+        @case ('lock') {
+          <rect x="5" y="10.5" width="14" height="10" rx="2"></rect>
+          <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"></path>
         }
         @case ('mic') {
           <rect x="9" y="2.5" width="6" height="12" rx="3"></rect>

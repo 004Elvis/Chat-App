@@ -41,4 +41,10 @@ export class UserService {
       `${this.API}/users/me/username`, { userName }
     );
   }
+
+  updateMyPublicKey(publicKey: string): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(
+      `${this.API}/users/me/publickey`, { publicKey }
+    );
+  }
 }

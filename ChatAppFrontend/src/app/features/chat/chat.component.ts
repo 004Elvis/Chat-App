@@ -3,6 +3,8 @@ import { CommonModule, AsyncPipe } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { SignalRService } from '../../core/services/signalr.service';
 import { ChatService } from '../../core/services/chat.service';
+import { UserService } from '../../core/services/user.service';
+import { CryptoService } from '../../core/services/crypto.service';
 import { ChatRoom } from '../../core/models/chat-room.model';
 import { Message } from '../../core/models/message.model';
 import { ChatRoomListComponent } from './chat-room-list/chat-room-list.component';
@@ -26,21 +28,27 @@ export class ChatComponent implements OnInit, OnDestroy {
   constructor(
     public authService: AuthService,
     public signalRService: SignalRService,
-    private chatService: ChatService
+    private chatService: ChatService,
+    private userService: UserService,
+    private cryptoService: CryptoService
   ) {}
 
   async ngOnInit(): Promise<void> {
+    this.setupEncryption();
+
     await this.signalRService.startConnection();
     this.loadRooms();
 
-    this.signalRService.messages$.subscribe(messages => {
+    this.signalRService.messages$.subscribe(async messages => {
       const currentRoom = this.selectedRoom();
       if (currentRoom && messages.length > 0) {
         const lastMessage = messages[messages.length - 1];
         if (lastMessage.chatRoomId === currentRoom.id) {
-          this.messages.set(messages.filter(
+          const roomMessages = messages.filter(
             m => m.chatRoomId === currentRoom.id
-          ));
+          );
+          const decrypted = await this.decryptMessages(roomMessages, currentRoom);
+          this.messages.set(decrypted);
         }
       }
     });
@@ -68,6 +76,34 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.signalRService.memberPromoted$.subscribe(({ roomId }) => {
       this.refreshRoom(roomId);
     });
+  }
+
+  private async setupEncryption(): Promise<void> {
+    try {
+      const publicKeyJwk = await this.cryptoService.ensureKeyPair();
+      if (publicKeyJwk) {
+        this.userService.updateMyPublicKey(publicKeyJwk).subscribe();
+      }
+    } catch (err) {
+      console.error('Encryption setup failed:', err);
+    }
+  }
+
+  private async decryptMessages(messages: Message[], room: ChatRoom): Promise<Message[]> {
+    const currentUser = this.authService.currentUser();
+    if (!currentUser || room.isGroup) return messages;
+
+    return Promise.all(messages.map(async m => {
+      const content = await this.cryptoService.decryptForRoom(room, currentUser, m.content);
+
+      let replyTo = m.replyTo;
+      if (replyTo) {
+        const replyContent = await this.cryptoService.decryptForRoom(room, currentUser, replyTo.content);
+        replyTo = { ...replyTo, content: replyContent };
+      }
+
+      return { ...m, content, replyTo };
+    }));
   }
 
   private dropRoom(roomId: number): void {
@@ -125,7 +161,6 @@ export class ChatComponent implements OnInit, OnDestroy {
 
     this.chatService.getMessages(room.id).subscribe(messages => {
       const reversed = [...messages].reverse();
-      this.messages.set(reversed);
       this.signalRService.messages$.next(reversed);
     });
 

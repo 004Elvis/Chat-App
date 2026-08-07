@@ -19,9 +19,14 @@
         <span class="chat-header-members">
           {{ room.members.length || 0 }} members
         </span>
+      } @else if (isEncrypted()) {
+        <span class="chat-header-encrypted">
+          <app-icon name="lock" [size]="12"></app-icon>
+          End-to-end encrypted
+        </span>
       }
     </div>
-    
+
     <button class="btn-icon" title="Media, Docs & Links" (click)="showMediaModal.set(true)">
       <app-icon name="image" [size]="20"></app-icon>
     </button>
@@ -173,8 +178,6 @@
     (closed)="showMediaModal.set(false)"
   />
 }
-
-
 
 @if (contextMenu(); as menu) {
   <div class="context-menu-backdrop" (click)="closeContextMenu()"></div>

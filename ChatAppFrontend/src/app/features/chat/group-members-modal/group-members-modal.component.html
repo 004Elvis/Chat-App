@@ -1,33 +1,70 @@
-<div class="modal-backdrop" (click)="close()">
-  <div class="modal-card" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+<div class="modal-overlay" (click)="close()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <div>
-        <h3>Group Members</h3>
-        <p>{{ members.length }} members</p>
+        <h2>{{ room.name }}</h2>
+        <span class="member-count">{{ room.members.length }} members</span>
       </div>
-      <button type="button" class="close-btn" (click)="close()" aria-label="Close">×</button>
+      <button class="btn-icon" (click)="close()">
+        <app-icon name="close" [size]="18"></app-icon>
+      </button>
     </div>
 
+    @if (actionError()) {
+      <p class="action-error">{{ actionError() }}</p>
+    }
+
     <div class="member-list">
-      @for (member of members; track member.id) {
-        <div class="member-item">
-          <div class="member-avatar">
+      @for (member of sortedMembers; track member.id) {
+        <div class="member-row">
+          <div class="avatar avatar-sm">
             @if (member.avatarUrl) {
-              <img [src]="member.avatarUrl" [alt]="member.userName" />
+              <img [src]="member.avatarUrl" alt="avatar" class="avatar-img" />
             } @else {
-              <span>{{ getInitials(member.userName) }}</span>
+              {{ getInitials(member.userName) }}
             }
           </div>
           <div class="member-info">
-            <div class="member-name">
+            <span class="member-name">
               {{ member.userName }}
-              @if (member.id === currentUser?.id) {
-                <span class="badge">You</span>
+              @if (isYou(member)) {
+                <span class="you-tag">(You)</span>
               }
-            </div>
-            <div class="member-email">{{ member.email || 'No email available' }}</div>
+            </span>
           </div>
+
+          @if (isAdmin(member)) {
+            <span class="admin-badge">Admin</span>
+          }
+
+          @if (currentUserIsAdmin && !isAdmin(member) && !isYou(member)) {
+            <div class="member-actions">
+              <button
+                class="member-action-btn"
+                [disabled]="actionLoadingUserId() === member.id"
+                (click)="promote(member)">
+                Make Admin
+              </button>
+              <button
+                class="member-action-btn member-action-danger"
+                [disabled]="actionLoadingUserId() === member.id"
+                (click)="remove(member)">
+                Remove
+              </button>
+            </div>
+          }
         </div>
+      }
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" [disabled]="leavingOrDeleting()" (click)="leaveGroup()">
+        Leave Group
+      </button>
+      @if (currentUserIsAdmin) {
+        <button class="btn btn-danger" [disabled]="leavingOrDeleting()" (click)="deleteGroup()">
+          Delete Group
+        </button>
       }
     </div>
   </div>

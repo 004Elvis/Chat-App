@@ -11,8 +11,8 @@ import { MessageInputComponent } from '../message-input/message-input.component'
 import { GroupMembersModalComponent } from '../group-members-modal/group-members-modal.component';
 import { RoomMediaModalComponent } from '../room-media-modal/room-media-modal.component';
 import { IconComponent } from '../../../core/components/icon/icon.component';
-import { BackgroundPickerModalComponent } from '../background-picker-modal/background-picker-modal.component';
 import { ChatBackgroundService } from '../../../core/services/chat-background.service';
+import { CryptoService } from '../../../core/services/crypto.service';
 
 @Component({
   selector: 'app-chat-window',
@@ -33,22 +33,34 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
 
   shouldScroll = false;
   showMembersModal = signal(false);
-showMediaModal = signal(false);
-contextMenu = signal<{ message: Message; x: number; y: number } | null>(null);
-replyingTo = signal<Message | null>(null);
-private longPressTimer: any;
+  showMediaModal = signal(false);
+  contextMenu = signal<{ message: Message; x: number; y: number } | null>(null);
+  replyingTo = signal<Message | null>(null);
+  isEncrypted = signal(false);
+  private longPressTimer: any;
 
-constructor(private bgService: ChatBackgroundService) {}
+  constructor(
+    private bgService: ChatBackgroundService,
+    private cryptoService: CryptoService
+  ) {}
 
-// Reactive instead of manually refreshed - now the background updates
-// automatically no matter where it's changed from (Settings menu, etc.)
-currentBackground = computed(() =>
-  this.room ? this.bgService.getBackgroundFor(this.room.id) : null
-);
+  currentBackground = computed(() =>
+    this.room ? this.bgService.getBackgroundFor(this.room.id) : null
+  );
 
-ngOnChanges(): void {
-  this.shouldScroll = true;
-}
+  ngOnChanges(): void {
+    this.shouldScroll = true;
+    this.refreshEncryptionStatus();
+  }
+
+  private async refreshEncryptionStatus(): Promise<void> {
+    if (!this.room || this.room.isGroup || !this.currentUser) {
+      this.isEncrypted.set(false);
+      return;
+    }
+    const key = await this.cryptoService.getRoomKey(this.room, this.currentUser);
+    this.isEncrypted.set(!!key);
+  }
 
   ngAfterViewChecked(): void {
     if (this.shouldScroll) {
@@ -142,7 +154,10 @@ ngOnChanges(): void {
     console.log('Sending message to room:', this.room?.id, 'content:', content);
     if (content.trim() && this.room) {
       const replyId = this.replyingTo()?.id;
-      await this.signalRService.sendMessage(this.room.id, content, replyId);
+      const toSend = this.currentUser
+        ? await this.cryptoService.encryptForRoom(this.room, this.currentUser, content)
+        : content;
+      await this.signalRService.sendMessage(this.room.id, toSend, replyId);
       this.replyingTo.set(null);
     }
   }
