@@ -34,8 +34,6 @@ export class ChatRoomListComponent implements OnChanges {
   addMemberSuccess = signal('');
   addMemberError = signal('');
 
-  // Separate state for "start a new DM" so it never mixes with the
-  // "add member to this group" flow above.
   showNewDm = signal(false);
   dmSearchQuery = '';
   dmSearchResults = signal<User[]>([]);
@@ -67,8 +65,6 @@ export class ChatRoomListComponent implements OnChanges {
     return (name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   }
 
-  // For a group room, the room has its own name. For a DM, there's no
-  // room name at all - we show whichever member isn't the current user.
   getOtherMember(room: ChatRoom): User | null {
     if (room.isGroup || !this.currentUser) return null;
     return room.members.find(m => m.id !== this.currentUser!.id) || null;
@@ -89,21 +85,25 @@ export class ChatRoomListComponent implements OnChanges {
     return undefined;
   }
 
- getLastMessagePreview(room: ChatRoom): string {
-  if (!room.lastMessage) return 'No messages yet';
-  if (room.lastMessage.isDeleted) return 'Message deleted';
+  getLastMessagePreview(room: ChatRoom): string {
+    if (!room.lastMessage) return 'No messages yet';
+    if (room.lastMessage.isDeleted) return 'Message deleted';
 
-  const msg = room.lastMessage;
-  if (!msg.content) {
-    if (msg.messageType === 'Image') return '📷 Photo';
-    if (msg.messageType === 'Video') return '🎥 Video';
-    if (msg.messageType === 'VoiceNote') return '🎤 Voice message';
-    if (msg.messageType === 'Document') return '📄 Document';
+    const msg = room.lastMessage;
+    if (!msg.content) {
+      if (msg.messageType === 'Image') return '📷 Photo';
+      if (msg.messageType === 'Video') return '🎥 Video';
+      if (msg.messageType === 'VoiceNote') return '🎤 Voice message';
+      if (msg.messageType === 'Document') return '📄 Document';
+    }
+
+    if (msg.content && msg.content.startsWith('e2e1:')) {
+      return '🔒 Encrypted message';
+    }
+
+    const preview = msg.content;
+    return preview.length > 35 ? preview.slice(0, 35) + '...' : preview;
   }
-
-  const preview = msg.content;
-  return preview.length > 35 ? preview.slice(0, 35) + '...' : preview;
-}
 
   formatTime(dateStr: string): string {
     const date = new Date(dateStr);

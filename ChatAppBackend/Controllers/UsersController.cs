@@ -38,6 +38,7 @@ namespace ChatAppBackend.Controllers
                 UserName = user.UserName,
                 Email = user.Email,
                 AvatarUrl = user.AvatarUrl,
+                PublicKey = user.PublicKey,
                 LastSeenAt = user.LastSeenAt
             });
         }
@@ -61,6 +62,7 @@ namespace ChatAppBackend.Controllers
                     UserName = u.UserName,
                     Email = u.Email,
                     AvatarUrl = u.AvatarUrl,
+                    PublicKey = u.PublicKey,
                     LastSeenAt = u.LastSeenAt
                 })
                 .ToListAsync();
@@ -74,7 +76,6 @@ namespace ChatAppBackend.Controllers
             if (file == null || file.Length == 0)
                 return BadRequest(new { message = "No file was uploaded." });
 
-            // 5MB cap - plenty for an avatar, keeps abuse/cost in check
             const long maxSizeBytes = 5 * 1024 * 1024;
             if (file.Length > maxSizeBytes)
                 return BadRequest(new { message = "Image must be smaller than 5MB." });
@@ -117,7 +118,6 @@ namespace ChatAppBackend.Controllers
             var user = await _context.Users.FindAsync(userId);
             if (user == null) return NotFound();
 
-            // No-op if they "changed" it to the same name (case-insensitive)
             if (user.UserName.ToLower() == dto.UserName.ToLower())
                 return Ok(new { userName = user.UserName });
 
@@ -131,6 +131,21 @@ namespace ChatAppBackend.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { userName = user.UserName });
+        }
+
+        [HttpPut("me/publickey")]
+        public async Task<IActionResult> UpdatePublicKey([FromBody] UpdatePublicKeyDto dto)
+        {
+            var userId = Guid.Parse(
+                User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return NotFound();
+
+            user.PublicKey = dto.PublicKey;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Public key updated." });
         }
     }
 }

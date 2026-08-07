@@ -251,25 +251,6 @@ namespace ChatAppBackend.Services
         public async Task<(bool Success, string? Error)> PromoteToAdminAsync(
             int roomId, Guid targetUserId, Guid requesterId)
         {
-            Console.WriteLine($"[PROMOTE DEBUG] roomId={roomId}, requesterId={requesterId}, targetUserId={targetUserId}");
-
-            var requesterMembership = await _context.ChatRoomMembers
-                .Where(m => m.ChatRoomId == roomId && m.UserId == requesterId)
-                .Select(m => new { m.UserId, m.Role })
-                .FirstOrDefaultAsync();
-
-            Console.WriteLine(requesterMembership == null
-                ? "[PROMOTE DEBUG] No ChatRoomMember row found for this requesterId in this room at all."
-                : $"[PROMOTE DEBUG] Found membership - Role='{requesterMembership.Role}'");
-
-            var allMembers = await _context.ChatRoomMembers
-                .Where(m => m.ChatRoomId == roomId)
-                .Select(m => new { m.UserId, m.Role })
-                .ToListAsync();
-            Console.WriteLine("[PROMOTE DEBUG] All members in this room:");
-            foreach (var m in allMembers)
-                Console.WriteLine($"  - UserId={m.UserId}, Role={m.Role}");
-
             var isAdmin = await _context.ChatRoomMembers
                 .AnyAsync(m => m.ChatRoomId == roomId
                     && m.UserId == requesterId
@@ -376,49 +357,49 @@ namespace ChatAppBackend.Services
             if (!isMember) return new List<MessageDto>();
 
             var query = _context.Messages
-    .Where(m => m.ChatRoomId == roomId)
-    .Include(m => m.Sender)
-    .Include(m => m.ReplyToMessage)
-        .ThenInclude(r => r!.Sender)
-    .Include(m => m.Attachments)
-    .OrderByDescending(m => m.SentAt)
-    .AsQueryable();
+                .Where(m => m.ChatRoomId == roomId)
+                .Include(m => m.Sender)
+                .Include(m => m.ReplyToMessage)
+                    .ThenInclude(r => r!.Sender)
+                .Include(m => m.Attachments)
+                .OrderByDescending(m => m.SentAt)
+                .AsQueryable();
 
-if (cursor.HasValue)
-    query = query.Where(m => m.Id < cursor.Value);
+            if (cursor.HasValue)
+                query = query.Where(m => m.Id < cursor.Value);
 
-var messages = await query.Take(limit).ToListAsync();
+            var messages = await query.Take(limit).ToListAsync();
 
-return messages.Select(m => new MessageDto
-{
-    Id = m.Id,
-    ChatRoomId = m.ChatRoomId,
-    SenderId = m.SenderId,
-    SenderUserName = m.Sender.UserName,
-    SenderAvatarUrl = m.Sender.AvatarUrl,
-    Content = m.IsDeleted ? "This message was deleted" : m.Content,
-    MessageType = m.MessageType,
-    SentAt = m.SentAt,
-    EditedAt = m.EditedAt,
-    IsDeleted = m.IsDeleted,
-    ReplyTo = m.ReplyToMessage == null ? null : new ReplyPreviewDto
-    {
-        Id = m.ReplyToMessage.Id,
-        SenderUserName = m.ReplyToMessage.Sender.UserName,
-        Content = m.ReplyToMessage.IsDeleted
-            ? "This message was deleted"
-            : m.ReplyToMessage.Content,
-        IsDeleted = m.ReplyToMessage.IsDeleted
-    },
-    Attachment = m.Attachments.Select(a => new AttachmentDto
-    {
-        Id = a.Id,
-        FileUrl = a.FileUrl,
-        FileName = a.FileName,
-        FileType = a.FileType,
-        FileSizeBytes = a.FileSizeBytes
-    }).FirstOrDefault()
-}).ToList();
+            return messages.Select(m => new MessageDto
+            {
+                Id = m.Id,
+                ChatRoomId = m.ChatRoomId,
+                SenderId = m.SenderId,
+                SenderUserName = m.Sender.UserName,
+                SenderAvatarUrl = m.Sender.AvatarUrl,
+                Content = m.IsDeleted ? "This message was deleted" : m.Content,
+                MessageType = m.MessageType,
+                SentAt = m.SentAt,
+                EditedAt = m.EditedAt,
+                IsDeleted = m.IsDeleted,
+                ReplyTo = m.ReplyToMessage == null ? null : new ReplyPreviewDto
+                {
+                    Id = m.ReplyToMessage.Id,
+                    SenderUserName = m.ReplyToMessage.Sender.UserName,
+                    Content = m.ReplyToMessage.IsDeleted
+                        ? "This message was deleted"
+                        : m.ReplyToMessage.Content,
+                    IsDeleted = m.ReplyToMessage.IsDeleted
+                },
+                Attachment = m.Attachments.Select(a => new AttachmentDto
+                {
+                    Id = a.Id,
+                    FileUrl = a.FileUrl,
+                    FileName = a.FileName,
+                    FileType = a.FileType,
+                    FileSizeBytes = a.FileSizeBytes
+                }).FirstOrDefault()
+            }).ToList();
         }
 
         private ChatRoomDto MapToDto(
@@ -437,6 +418,7 @@ return messages.Select(m => new MessageDto
                     UserName = m.User.UserName,
                     Email = m.User.Email,
                     AvatarUrl = m.User.AvatarUrl,
+                    PublicKey = m.User.PublicKey,
                     LastSeenAt = m.User.LastSeenAt
                 }).ToList(),
                 AdminUserIds = room.Members
