@@ -63,7 +63,8 @@ export class AuthService {
       userName: response.userName,
       email: '',
       avatarUrl: response.avatarUrl,
-      isEmailVerified: response.isEmailVerified
+      isEmailVerified: response.isEmailVerified,
+      isSiteAdmin: response.isSiteAdmin
     };
     localStorage.setItem(this.USER_KEY, JSON.stringify(user));
     this.currentUser.set(user);
