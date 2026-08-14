@@ -50,7 +50,8 @@ namespace ChatAppBackend.Services
                 UserName = user.UserName,
                 UserId = user.Id,
                 AvatarUrl = user.AvatarUrl,
-                IsEmailVerified = user.IsEmailVerified
+                IsEmailVerified = user.IsEmailVerified,
+                IsSiteAdmin = user.IsSiteAdmin
             };
         }
 

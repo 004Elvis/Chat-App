@@ -1,0 +1,99 @@
+<div class="admin-page">
+  <div class="admin-header">
+    <div>
+      <h1>Admin Panel</h1>
+      <p>All registered users across ChatApp</p>
+    </div>
+    <a routerLink="/chat" class="btn btn-secondary">Back to Chat</a>
+  </div>
+
+  @if (stats(); as s) {
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-value">{{ s.totalUsers }}</span>
+        <span class="stat-label">Total Users</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ s.verifiedUsers }}</span>
+        <span class="stat-label">Verified</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ s.totalGroupRooms }}</span>
+        <span class="stat-label">Groups</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ s.totalDirectMessageRooms }}</span>
+        <span class="stat-label">DMs</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value">{{ s.totalMessages }}</span>
+        <span class="stat-label">Messages</span>
+      </div>
+    </div>
+  }
+
+  <div class="admin-search">
+    <app-icon name="search" [size]="16"></app-icon>
+    <input
+      type="text"
+      placeholder="Search by username or email..."
+      [(ngModel)]="searchQuery"
+    />
+  </div>
+
+  @if (loading()) {
+    <p class="admin-status">Loading users...</p>
+  } @else if (error()) {
+    <p class="admin-status admin-error">{{ error() }}</p>
+  } @else {
+    <div class="user-table-wrapper">
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Joined</th>
+            <th>Last Seen</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of filteredUsers; track user.id) {
+            <tr>
+              <td>
+                <div class="user-cell">
+                  <div class="avatar avatar-sm">
+                    @if (user.avatarUrl) {
+                      <img [src]="user.avatarUrl" alt="avatar" class="avatar-img" />
+                    } @else {
+                      {{ getInitials(user.userName) }}
+                    }
+                  </div>
+                  <span>{{ user.userName }}</span>
+                  @if (user.isSiteAdmin) {
+                    <span class="admin-tag">Site Admin</span>
+                  }
+                </div>
+              </td>
+              <td>{{ user.email }}</td>
+              <td>
+                @if (user.isEmailVerified) {
+                  <span class="status-badge status-verified">Verified</span>
+                } @else {
+                  <span class="status-badge status-unverified">Unverified</span>
+                }
+              </td>
+              <td>{{ formatDate(user.createdAt) }}</td>
+              <td>{{ formatDateTime(user.lastSeenAt) }}</td>
+            </tr>
+          }
+          @if (filteredUsers.length === 0) {
+            <tr>
+              <td colspan="5" class="admin-empty">No users match your search.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>

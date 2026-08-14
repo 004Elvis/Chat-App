@@ -5,11 +5,13 @@ import { ThemeService } from '../../../core/services/theme.service';
 import { ProfileModalComponent } from '../profile-modal/profile-modal.component';
 import { BackgroundPickerModalComponent } from '../background-picker-modal/background-picker-modal.component';
 import { ChatRoom } from '../../../core/models/chat-room.model';
+import { RouterLink } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-settings-menu',
   standalone: true,
-  imports: [CommonModule, IconComponent, ProfileModalComponent, BackgroundPickerModalComponent],
+  imports: [CommonModule, IconComponent, ProfileModalComponent, BackgroundPickerModalComponent, RouterLink],
   templateUrl: './settings-menu.component.html',
   styleUrl: './settings-menu.component.css'
 })
@@ -20,7 +22,7 @@ export class SettingsMenuComponent {
   showProfileModal = signal(false);
   showBgModal = signal(false);
 
-  constructor(public themeService: ThemeService) {}
+  constructor(public themeService: ThemeService, public authService: AuthService) {}
 
   toggleDropdown(): void {
     this.showDropdown.set(!this.showDropdown());

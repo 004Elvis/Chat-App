@@ -9,6 +9,7 @@ namespace ChatAppBackend.Models
         public string? AvatarUrl { get; set; }
         public bool IsEmailVerified { get; set; } = false;
         public string? PublicKey { get; set; }
+        public bool IsSiteAdmin { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? LastSeenAt { get; set; }
 

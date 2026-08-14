@@ -6,4 +6,5 @@ export interface User {
   publicKey?: string;
   lastSeenAt?: string;
   isEmailVerified?: boolean;
+  isSiteAdmin?: boolean;
 }

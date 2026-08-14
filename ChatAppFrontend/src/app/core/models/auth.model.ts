@@ -20,4 +20,5 @@ export interface AuthResponse {
   userId: string;
   avatarUrl?: string;
   isEmailVerified: boolean;
+  isSiteAdmin: boolean;
 }
