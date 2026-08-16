@@ -166,6 +166,37 @@
   padding: var(--spacing-xl) !important;
 }
 
+.admin-toggle-btn {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.admin-toggle-btn:hover {
+  background: var(--primary-light);
+}
+
+.admin-toggle-revoke {
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+
+.admin-toggle-revoke:hover {
+  background: var(--danger-bg);
+}
+
+.admin-you-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
 @media (max-width: 640px) {
   .admin-page {
     padding: var(--spacing-md);

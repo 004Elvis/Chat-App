@@ -55,6 +55,28 @@ namespace ChatAppBackend.Controllers
             return Ok(users);
         }
 
+        [HttpPost("users/{id}/toggle-admin")]
+public async Task<IActionResult> ToggleSiteAdmin(Guid id)
+{
+    if (!await IsRequesterSiteAdmin())
+        return Forbid();
+
+    // Prevent accidentally locking yourself out - revoking your own
+    // admin status has to go through direct DB access, same as
+    // granting the very first admin did.
+    var requesterId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    if (requesterId == id)
+        return BadRequest(new { message = "You can't change your own admin status here." });
+
+    var target = await _context.Users.FindAsync(id);
+    if (target == null) return NotFound();
+
+    target.IsSiteAdmin = !target.IsSiteAdmin;
+    await _context.SaveChangesAsync();
+
+    return Ok(new { isSiteAdmin = target.IsSiteAdmin });
+}
+
         [HttpGet("stats")]
         public async Task<IActionResult> GetStats()
         {

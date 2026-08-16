@@ -55,6 +55,7 @@
             <th>Status</th>
             <th>Joined</th>
             <th>Last Seen</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -85,11 +86,23 @@
               </td>
               <td>{{ formatDate(user.createdAt) }}</td>
               <td>{{ formatDateTime(user.lastSeenAt) }}</td>
+              <td>
+                  @if (user.id !== currentUserId()) {
+                    <button
+                      class="admin-toggle-btn"
+                      [class.admin-toggle-revoke]="user.isSiteAdmin"
+                      (click)="toggleAdmin(user)">
+                      {{ user.isSiteAdmin ? 'Revoke Admin' : 'Make Admin' }}
+                    </button>
+                  } @else {
+                    <span class="admin-you-label">(You)</span>
+                  }
+                </td>
             </tr>
           }
           @if (filteredUsers.length === 0) {
             <tr>
-              <td colspan="5" class="admin-empty">No users match your search.</td>
+              <td colspan="6" class="admin-empty">No users match your search.</td>
             </tr>
           }
         </tbody>
