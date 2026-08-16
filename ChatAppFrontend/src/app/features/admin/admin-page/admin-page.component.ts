@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { AdminService } from '../../../core/services/admin.service';
 import { AdminUser, AdminStats } from '../../../core/models/admin.model';
 import { IconComponent } from '../../../core/components/icon/icon.component';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-admin-page',
@@ -19,10 +20,12 @@ export class AdminPageComponent implements OnInit {
   loading = signal(true);
   error = signal('');
   searchQuery = '';
+  currentUserId = signal<string | null>(null);
 
-  constructor(private adminService: AdminService) {}
+  constructor(private adminService: AdminService, private authService: AuthService) {}
 
   ngOnInit(): void {
+     this.currentUserId.set(this.authService.currentUser()?.id ?? null);
     this.adminService.getStats().subscribe({
       next: s => this.stats.set(s),
       error: () => {}
@@ -67,4 +70,20 @@ export class AdminPageComponent implements OnInit {
       hour: '2-digit', minute: '2-digit'
     });
   }
+
+  toggleAdmin(user: AdminUser): void {
+  const action = user.isSiteAdmin ? 'revoke admin access from' : 'grant admin access to';
+  if (!confirm(`Are you sure you want to ${action} ${user.userName}?`)) return;
+
+  this.adminService.toggleSiteAdmin(user.id).subscribe({
+    next: (res) => {
+      this.users.update(list =>
+        list.map(u => u.id === user.id ? { ...u, isSiteAdmin: res.isSiteAdmin } : u)
+      );
+    },
+    error: (err) => {
+      alert(err.error?.message || 'Could not update admin status.');
+    }
+  });
+}
 }

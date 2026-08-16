@@ -17,4 +17,12 @@ export class AdminService {
   getStats(): Observable<AdminStats> {
     return this.http.get<AdminStats>(`${this.API}/stats`);
   }
+
+  toggleSiteAdmin(userId: string): Observable<{ isSiteAdmin: boolean }> {
+  return this.http.post<{ isSiteAdmin: boolean }>(
+    `${this.API}/users/${userId}/toggle-admin`, {}
+  );
+}
+
+
 }
