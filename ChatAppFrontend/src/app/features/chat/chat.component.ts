@@ -76,6 +76,12 @@ export class ChatComponent implements OnInit, OnDestroy {
     this.signalRService.memberPromoted$.subscribe(({ roomId }) => {
       this.refreshRoom(roomId);
     });
+
+    this.signalRService.groupKeyRotated$.subscribe(({ roomId }) => {
+  // A new version exists - drop what we've cached so the next decrypt
+  // attempt re-fetches and picks up the new key too.
+  this.groupKeysLoadedFor.delete(roomId);
+});
   }
 
   private async setupEncryption(): Promise<void> {
@@ -90,21 +96,54 @@ export class ChatComponent implements OnInit, OnDestroy {
   }
 
   private async decryptMessages(messages: Message[], room: ChatRoom): Promise<Message[]> {
-    const currentUser = this.authService.currentUser();
-    if (!currentUser || room.isGroup) return messages;
+  const currentUser = this.authService.currentUser();
+  if (!currentUser) return messages;
 
+  if (room.isGroup) {
+    await this.ensureGroupKeysLoaded(room.id);
     return Promise.all(messages.map(async m => {
-      const content = await this.cryptoService.decryptForRoom(room, currentUser, m.content);
-
+      const content = await this.cryptoService.decryptForGroup(room.id, m.content);
       let replyTo = m.replyTo;
       if (replyTo) {
-        const replyContent = await this.cryptoService.decryptForRoom(room, currentUser, replyTo.content);
+        const replyContent = await this.cryptoService.decryptForGroup(room.id, replyTo.content);
         replyTo = { ...replyTo, content: replyContent };
       }
-
       return { ...m, content, replyTo };
     }));
   }
+
+  return Promise.all(messages.map(async m => {
+    const content = await this.cryptoService.decryptForRoom(room, currentUser, m.content);
+    let replyTo = m.replyTo;
+    if (replyTo) {
+      const replyContent = await this.cryptoService.decryptForRoom(room, currentUser, replyTo.content);
+      replyTo = { ...replyTo, content: replyContent };
+    }
+    return { ...m, content, replyTo };
+  }));
+}
+
+private groupKeysLoadedFor = new Set<number>();
+
+private async ensureGroupKeysLoaded(roomId: number): Promise<void> {
+  if (this.groupKeysLoadedFor.has(roomId)) return;
+
+  await new Promise<void>((resolve) => {
+    this.chatService.getMyGroupKeys(roomId).subscribe({
+      next: async (keys) => {
+        const gotAtLeastOne = await this.cryptoService.loadGroupKeys(roomId, async () => keys);
+       
+        if (gotAtLeastOne) {
+          this.groupKeysLoadedFor.add(roomId);
+        } else {
+          console.warn(`No group key found yet for room ${roomId} - will retry next time it's opened.`);
+        }
+        resolve();
+      },
+      error: () => resolve()
+    });
+  });
+}
 
   private dropRoom(roomId: number): void {
     this.rooms.update(rooms => rooms.filter(r => r.id !== roomId));
@@ -175,13 +214,39 @@ export class ChatComponent implements OnInit, OnDestroy {
   }
 
   async createRoom(name: string): Promise<void> {
-    this.chatService.createRoom(name, true, []).subscribe({
-      next: room => {
-        this.rooms.update(rooms => [...rooms, room]);
-        this.selectRoom(room);
+  this.chatService.createRoom(name, true, []).subscribe({
+    next: async room => {
+      this.rooms.update(rooms => [...rooms, room]);
+      await this.initializeGroupKey(room);
+      this.selectRoom(room);
+    }
+  });
+}
+
+// Called once, right after a brand-new group is created. At this point
+// the room only has one member (its creator, who is automatically the
+// sole Admin) - this establishes version 1 of the group key.
+private async initializeGroupKey(room: ChatRoom): Promise<void> {
+  if (!room.isGroup) return;
+
+  const wrapped = await this.cryptoService.createAndWrapGroupKey(room.members);
+  if (!wrapped) {
+    console.warn(`Could not create group key for room ${room.id} - creator has no key pair or no public keys available yet.`);
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    this.chatService.distributeGroupKey(
+      room.id, 1, wrapped.myPublicKeyJwk, wrapped.entries
+    ).subscribe({
+      next: () => resolve(),
+      error: (err) => {
+        console.error('Could not initialize group key:', err);
+        resolve();
       }
     });
-  }
+  });
+}
 
   onDmStarted(room: ChatRoom): void {
     const exists = this.rooms().some(r => r.id === room.id);

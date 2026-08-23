@@ -5,6 +5,7 @@ import { ChatRoom } from '../models/chat-room.model';
 import { Message } from '../models/message.model';
 import { RoomMedia } from '../models/room-media.model';
 import { environment } from '../../../environments/environment';
+import { GroupKeyResponse, GroupKeyVersionInfo } from '../models/group-key.model';
 
 export interface AttachmentUploadResult {
   fileUrl: string;
@@ -76,4 +77,19 @@ export class ChatService {
   getRoomMedia(roomId: number): Observable<RoomMedia> {
     return this.http.get<RoomMedia>(`${this.API}/${roomId}/media`);
   }
+
+  getMyGroupKeys(roomId: number): Observable<GroupKeyResponse[]> {
+  return this.http.get<GroupKeyResponse[]>(`${this.API}/${roomId}/groupkey/mine`);
+}
+
+getGroupKeyVersionInfo(roomId: number): Observable<GroupKeyVersionInfo> {
+  return this.http.get<GroupKeyVersionInfo>(`${this.API}/${roomId}/groupkey/version-info`);
+}
+
+distributeGroupKey(roomId: number, version: number, distributorPublicKey: string,
+  entries: { userId: string; encryptedKey: string }[]): Observable<any> {
+  return this.http.post(`${this.API}/${roomId}/groupkey/distribute`, {
+    version, distributorPublicKey, entries
+  });
+}
 }

@@ -16,6 +16,7 @@ namespace ChatAppBackend.Data
         public DbSet<MessageAttachment> MessageAttachments { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<EmailVerificationToken> EmailVerificationTokens { get; set; }
+        public DbSet<GroupKeyEntry> GroupKeyEntries { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -95,6 +96,21 @@ namespace ChatAppBackend.Data
                       .HasForeignKey(a => a.MessageId)
                       .OnDelete(DeleteBehavior.Cascade);
             });
+
+            modelBuilder.Entity<GroupKeyEntry>(entity =>
+                {
+                    entity.HasOne(k => k.ChatRoom)
+                        .WithMany()
+                        .HasForeignKey(k => k.ChatRoomId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    entity.HasOne(k => k.User)
+                        .WithMany()
+                        .HasForeignKey(k => k.UserId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    entity.HasIndex(k => new { k.ChatRoomId, k.KeyVersion, k.UserId });
+                });
         }
     }
 }

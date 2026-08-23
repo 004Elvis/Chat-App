@@ -53,14 +53,20 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
     this.refreshEncryptionStatus();
   }
 
-  private async refreshEncryptionStatus(): Promise<void> {
-    if (!this.room || this.room.isGroup || !this.currentUser) {
-      this.isEncrypted.set(false);
-      return;
-    }
-    const key = await this.cryptoService.getRoomKey(this.room, this.currentUser);
-    this.isEncrypted.set(!!key);
+ private async refreshEncryptionStatus(): Promise<void> {
+  if (!this.room || !this.currentUser) {
+    this.isEncrypted.set(false);
+    return;
   }
+
+  if (this.room.isGroup) {
+    this.isEncrypted.set(this.cryptoService.hasGroupKey(this.room.id));
+    return;
+  }
+
+  const key = await this.cryptoService.getRoomKey(this.room, this.currentUser);
+  this.isEncrypted.set(!!key);
+}
 
   ngAfterViewChecked(): void {
     if (this.shouldScroll) {
@@ -151,16 +157,21 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
   }
 
   async onSendMessage(content: string): Promise<void> {
-    console.log('Sending message to room:', this.room?.id, 'content:', content);
-    if (content.trim() && this.room) {
-      const replyId = this.replyingTo()?.id;
-      const toSend = this.currentUser
-        ? await this.cryptoService.encryptForRoom(this.room, this.currentUser, content)
-        : content;
-      await this.signalRService.sendMessage(this.room.id, toSend, replyId);
-      this.replyingTo.set(null);
+  console.log('Sending message to room:', this.room?.id, 'content:', content);
+  if (content.trim() && this.room) {
+    const replyId = this.replyingTo()?.id;
+    let toSend = content;
+
+    if (this.room.isGroup) {
+      toSend = await this.cryptoService.encryptForGroup(this.room.id, content);
+    } else if (this.currentUser) {
+      toSend = await this.cryptoService.encryptForRoom(this.room, this.currentUser, content);
     }
+
+    await this.signalRService.sendMessage(this.room.id, toSend, replyId);
+    this.replyingTo.set(null);
   }
+}
 
   async onAttachmentSent(attachment: {
     fileUrl: string; fileName: string; fileType: string;
