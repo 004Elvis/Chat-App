@@ -18,6 +18,9 @@
       @if (room.isGroup) {
         <span class="chat-header-members">
           {{ room.members.length || 0 }} members
+          @if (isEncrypted()) {
+            · <app-icon name="lock" [size]="11"></app-icon> Encrypted
+          }
         </span>
       } @else if (isEncrypted()) {
         <span class="chat-header-encrypted">

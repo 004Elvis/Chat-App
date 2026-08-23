@@ -4,6 +4,7 @@ import { ChatRoom } from '../../../core/models/chat-room.model';
 import { User } from '../../../core/models/user.model';
 import { IconComponent } from '../../../core/components/icon/icon.component';
 import { ChatService } from '../../../core/services/chat.service';
+import { CryptoService } from '../../../core/services/crypto.service';
 
 @Component({
   selector: 'app-group-members-modal',
@@ -21,7 +22,10 @@ export class GroupMembersModalComponent {
   actionLoadingUserId = signal<string | null>(null);
   leavingOrDeleting = signal(false);
 
-  constructor(private chatService: ChatService) {}
+  constructor(
+    private chatService: ChatService,
+    private cryptoService: CryptoService
+  ) {}
 
   getInitials(name: string): string {
     return (name || 'U').split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -66,7 +70,12 @@ export class GroupMembersModalComponent {
     this.actionLoadingUserId.set(member.id);
 
     this.chatService.removeMember(this.room.id, member.id).subscribe({
-      next: () => this.actionLoadingUserId.set(null),
+      next: () => {
+        this.actionLoadingUserId.set(null);
+        // Someone was just removed - rotate the group key so they
+        // can't decrypt anything sent from this point forward.
+        this.rotateGroupKey(member.id);
+      },
       error: (err) => {
         this.actionError.set(err.error?.message || `Could not remove ${member.userName}.`);
         this.actionLoadingUserId.set(null);
@@ -103,6 +112,32 @@ export class GroupMembersModalComponent {
         this.actionError.set('Could not delete the group.');
         this.leavingOrDeleting.set(false);
       }
+    });
+  }
+
+  // Generates a fresh group key and distributes it to everyone except
+  // the departed member. Fails silently from the user's point of view -
+  // the remove/leave action itself already succeeded regardless of
+  // whether re-keying works, since correctness of membership matters
+  // more than encryption continuity in an edge-case failure.
+  private rotateGroupKey(excludeUserId: string): void {
+    const remainingMembers = this.room.members.filter(m => m.id !== excludeUserId);
+
+    this.chatService.getGroupKeyVersionInfo(this.room.id).subscribe({
+      next: async (info) => {
+        const wrapped = await this.cryptoService.createAndWrapGroupKey(remainingMembers);
+        if (!wrapped) return;
+
+        this.chatService.distributeGroupKey(
+          this.room.id,
+          info.latestVersion + 1,
+          wrapped.myPublicKeyJwk,
+          wrapped.entries
+        ).subscribe({
+          error: (err) => console.error('Group key rotation failed:', err)
+        });
+      },
+      error: (err) => console.error('Could not fetch key version info:', err)
     });
   }
 

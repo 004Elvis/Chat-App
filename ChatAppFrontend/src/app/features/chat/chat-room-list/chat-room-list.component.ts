@@ -8,6 +8,7 @@ import { UserService } from '../../../core/services/user.service';
 import { ChatService } from '../../../core/services/chat.service';
 import { IconComponent } from '../../../core/components/icon/icon.component';
 import { SettingsMenuComponent } from '../settings-menu/settings-menu.component';
+import { CryptoService } from '../../../core/services/crypto.service';
 
 @Component({
   selector: 'app-chat-room-list',
@@ -41,9 +42,10 @@ export class ChatRoomListComponent implements OnChanges {
   dmStarting = signal(false);
 
   constructor(
-    private userService: UserService,
-    private chatService: ChatService
-  ) {}
+  private userService: UserService,
+  private chatService: ChatService,
+  private cryptoService: CryptoService
+) {}
 
   ngOnChanges(): void {
     this.showAddMember.set(false);
@@ -144,22 +146,51 @@ export class ChatRoomListComponent implements OnChanges {
     });
   }
 
-  addMember(user: User): void {
-    if (!this.selectedRoom) return;
-    this.addMemberSuccess.set('');
-    this.addMemberError.set('');
+ addMember(user: User): void {
+  if (!this.selectedRoom) return;
+  this.addMemberSuccess.set('');
+  this.addMemberError.set('');
 
-    this.userService.addMember(this.selectedRoom.id, user.id).subscribe({
-      next: () => {
-        this.addMemberSuccess.set(`${user.userName} added successfully!`);
-        this.memberSearchQuery = '';
-        this.searchResults.set([]);
-      },
-      error: () => {
-        this.addMemberError.set(`Failed to add ${user.userName}.`);
-      }
-    });
-  }
+  this.userService.addMember(this.selectedRoom.id, user.id).subscribe({
+    next: () => {
+      this.addMemberSuccess.set(`${user.userName} added successfully!`);
+      this.memberSearchQuery = '';
+      this.searchResults.set([]);
+      this.wrapKeyForNewMember(user);
+    },
+    error: () => {
+      this.addMemberError.set(`Failed to add ${user.userName}.`);
+    }
+  });
+}
+
+// Wraps the group's current key for a newly-added member. This is NOT
+// a rotation - the existing key stays valid for everyone, the new
+// person just gets their own copy of it going forward.
+private wrapKeyForNewMember(newMember: User): void {
+  if (!this.selectedRoom) return;
+  const roomId = this.selectedRoom.id;
+
+  this.chatService.getGroupKeyVersionInfo(roomId).subscribe({
+    next: async (info) => {
+      if (info.latestVersion === 0) return;
+
+      const wrappedEntry = await this.cryptoService
+        .wrapExistingGroupKeyForNewMember(roomId, newMember);
+      if (!wrappedEntry) return;
+
+      const myPublicKeyJwk = await this.cryptoService.getMyPublicKeyJwk();
+      if (!myPublicKeyJwk) return;
+
+      this.chatService.distributeGroupKey(
+        roomId, info.latestVersion, myPublicKeyJwk, [wrappedEntry]
+      ).subscribe({
+        error: (err) => console.error('Could not share group key with new member:', err)
+      });
+    },
+    error: (err) => console.error('Could not fetch key version info:', err)
+  });
+}
 
   toggleNewDm(): void {
     this.showNewDm.set(!this.showNewDm());

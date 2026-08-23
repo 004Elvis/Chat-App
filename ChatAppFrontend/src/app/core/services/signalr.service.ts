@@ -16,6 +16,7 @@ export class SignalRService {
   memberRemoved$ = new Subject<{ roomId: number; userId: string }>();
   memberPromoted$ = new Subject<{ roomId: number; userId: string }>();
   memberLeft$ = new Subject<{ roomId: number; userId: string }>();
+  groupKeyRotated$ = new Subject<{ roomId: number; version: number }>();
 
   constructor(private authService: AuthService) {}
 
@@ -157,6 +158,10 @@ export class SignalRService {
 
     this.hubConnection.on('MemberLeft', (roomId: number, userId: string) => {
       this.memberLeft$.next({ roomId, userId });
+    });
+
+    this.hubConnection.on('GroupKeyRotated', (roomId: number, version: number) => {
+      this.groupKeyRotated$.next({ roomId, version });
     });
   }
 }
