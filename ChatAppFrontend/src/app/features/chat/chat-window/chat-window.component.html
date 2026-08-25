@@ -15,11 +15,13 @@
       [class.chat-header-clickable]="room.isGroup"
       (click)="room.isGroup && showMembersModal.set(true)">
       <h3 class="chat-header-name">{{ displayName }}</h3>
-      @if (room.isGroup) {
+          @if (room.isGroup) {
         <span class="chat-header-members">
           {{ room.members.length || 0 }} members
           @if (isEncrypted()) {
-            · <app-icon name="lock" [size]="11"></app-icon> Encrypted
+            <span class="chat-header-encrypted-inline">
+              <app-icon name="lock" [size]="10"></app-icon> Encrypted
+            </span>
           }
         </span>
       } @else if (isEncrypted()) {

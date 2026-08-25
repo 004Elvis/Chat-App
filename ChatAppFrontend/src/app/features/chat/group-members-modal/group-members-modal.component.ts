@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChatRoom } from '../../../core/models/chat-room.model';
 import { User } from '../../../core/models/user.model';
@@ -13,7 +13,7 @@ import { CryptoService } from '../../../core/services/crypto.service';
   templateUrl: './group-members-modal.component.html',
   styleUrl: './group-members-modal.component.css'
 })
-export class GroupMembersModalComponent {
+export class GroupMembersModalComponent implements OnInit {
   @Input() room!: ChatRoom;
   @Input() currentUser: User | null = null;
   @Output() closed = new EventEmitter<void>();
@@ -38,6 +38,57 @@ export class GroupMembersModalComponent {
   isYou(member: User): boolean {
     return member.id === this.currentUser?.id;
   }
+
+  ngOnInit(): void {
+  if (this.currentUserIsAdmin) {
+    this.repairMissingKeys();
+  }
+}
+
+private async repairMissingKeys(): Promise<void> {
+  this.chatService.getGroupKeyVersionInfo(this.room.id).subscribe({
+    next: async (info) => {
+      if (info.latestVersion === 0) return;
+
+      if (!this.cryptoService.hasGroupKey(this.room.id)) {
+        await new Promise<void>((resolve) => {
+          this.chatService.getMyGroupKeys(this.room.id).subscribe({
+            next: async (keys) => {
+              await this.cryptoService.loadGroupKeys(this.room.id, async () => keys);
+              resolve();
+            },
+            error: () => resolve()
+          });
+        });
+      }
+      if (!this.cryptoService.hasGroupKey(this.room.id)) return;
+
+      const myPublicKeyJwk = await this.cryptoService.getMyPublicKeyJwk();
+      if (!myPublicKeyJwk) return;
+
+      // Re-wrap for EVERY current member, not just ones that appear to
+      // be missing an entry - an entry can exist but be silently
+      // unusable if that person's device generated a new key pair
+      // since it was last wrapped. The backend now upserts, so this is
+      // always safe to run.
+      const entries: { userId: string; encryptedKey: string }[] = [];
+      for (const member of this.room.members) {
+        const wrapped = await this.cryptoService
+          .wrapExistingGroupKeyForNewMember(this.room.id, member);
+        if (wrapped) entries.push(wrapped);
+      }
+
+      if (entries.length > 0) {
+        this.chatService.distributeGroupKey(
+          this.room.id, info.latestVersion, myPublicKeyJwk, entries
+        ).subscribe({
+          error: (err) => console.error('Key repair failed:', err)
+        });
+      }
+    },
+    error: () => {}
+  });
+}
 
   get currentUserIsAdmin(): boolean {
     return !!this.currentUser && this.room.adminUserIds.includes(this.currentUser.id);
