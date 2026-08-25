@@ -175,9 +175,28 @@ private wrapKeyForNewMember(newMember: User): void {
     next: async (info) => {
       if (info.latestVersion === 0) return;
 
+      // Make sure OUR OWN copy of the key is actually loaded before
+      // trying to wrap it for someone else - a page refresh clears the
+      // in-memory cache, so this can't be assumed to already be ready.
+      if (!this.cryptoService.hasGroupKey(roomId)) {
+        await new Promise<void>((resolve) => {
+          this.chatService.getMyGroupKeys(roomId).subscribe({
+            next: async (keys) => {
+              await this.cryptoService.loadGroupKeys(roomId, async () => keys);
+              resolve();
+            },
+            error: () => resolve()
+          });
+        });
+      }
+
       const wrappedEntry = await this.cryptoService
         .wrapExistingGroupKeyForNewMember(roomId, newMember);
-      if (!wrappedEntry) return;
+
+      if (!wrappedEntry) {
+        console.error(`Could not share group key with ${newMember.userName} - the key may not be available on this device.`);
+        return;
+      }
 
       const myPublicKeyJwk = await this.cryptoService.getMyPublicKeyJwk();
       if (!myPublicKeyJwk) return;

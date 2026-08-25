@@ -223,9 +223,6 @@ private async ensureGroupKeysLoaded(roomId: number): Promise<void> {
   });
 }
 
-// Called once, right after a brand-new group is created. At this point
-// the room only has one member (its creator, who is automatically the
-// sole Admin) - this establishes version 1 of the group key.
 private async initializeGroupKey(room: ChatRoom): Promise<void> {
   if (!room.isGroup) return;
 

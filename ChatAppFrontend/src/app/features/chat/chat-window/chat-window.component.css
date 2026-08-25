@@ -68,6 +68,21 @@
   color: var(--text-secondary);
 }
 
+.chat-header-members {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.chat-header-encrypted-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--success-text, #16a34a);
+}
+
 .chat-header-encrypted {
   display: flex;
   align-items: center;
@@ -75,6 +90,10 @@
   font-size: 0.75rem;
   color: var(--success-text, #16a34a);
 }
+
+
+
+
 
 .messages-container {
   flex: 1;

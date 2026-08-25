@@ -92,35 +92,52 @@ namespace ChatAppBackend.Services
         return (false, "Key version out of sync - please retry.");
 
     if (isAddingToCurrentVersion)
+{
+    var existingEntries = await _context.GroupKeyEntries
+        .Where(k => k.ChatRoomId == roomId && k.KeyVersion == dto.Version)
+        .ToListAsync();
+
+    foreach (var incoming in dto.Entries)
     {
-        // Adding a member to the existing version - make sure we're not
-        // creating a duplicate entry for someone who already has this
-        // version's key.
-        var alreadyHasEntry = await _context.GroupKeyEntries
-            .Where(k => k.ChatRoomId == roomId && k.KeyVersion == dto.Version)
-            .Select(k => k.UserId)
-            .ToListAsync();
-
-        dto.Entries = dto.Entries
-            .Where(e => !alreadyHasEntry.Contains(e.UserId))
-            .ToList();
-
-        if (dto.Entries.Count == 0)
-            return (true, null); // nothing new to add, not an error
+        var existing = existingEntries.FirstOrDefault(e => e.UserId == incoming.UserId);
+        if (existing != null)
+        {
+            // Overwrite - the admin's client determined this entry needs
+            // refreshing (e.g. the recipient generated a new device key).
+            existing.EncryptedKey = incoming.EncryptedKey;
+            existing.DistributorPublicKey = dto.DistributorPublicKey;
+            existing.CreatedAt = DateTime.UtcNow;
+        }
+        else
+        {
+            _context.GroupKeyEntries.Add(new GroupKeyEntry
+            {
+                ChatRoomId = roomId,
+                KeyVersion = dto.Version,
+                UserId = incoming.UserId,
+                EncryptedKey = incoming.EncryptedKey,
+                DistributorPublicKey = dto.DistributorPublicKey,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
     }
 
-    var entries = dto.Entries.Select(e => new GroupKeyEntry
-    {
-        ChatRoomId = roomId,
-        KeyVersion = dto.Version,
-        UserId = e.UserId,
-        EncryptedKey = e.EncryptedKey,
-        DistributorPublicKey = dto.DistributorPublicKey,
-        CreatedAt = DateTime.UtcNow
-    }).ToList();
-
-    _context.GroupKeyEntries.AddRange(entries);
     await _context.SaveChangesAsync();
+    return (true, null);
+}
+
+var entries = dto.Entries.Select(e => new GroupKeyEntry
+{
+    ChatRoomId = roomId,
+    KeyVersion = dto.Version,
+    UserId = e.UserId,
+    EncryptedKey = e.EncryptedKey,
+    DistributorPublicKey = dto.DistributorPublicKey,
+    CreatedAt = DateTime.UtcNow
+}).ToList();
+
+_context.GroupKeyEntries.AddRange(entries);
+await _context.SaveChangesAsync();
 
     // Only a genuine rotation needs to notify everyone to refresh their
     // key cache - adding one member to the current version doesn't

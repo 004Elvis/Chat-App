@@ -2,26 +2,36 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-md);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  min-height: var(--header-height);
+  gap: 8px;
+  padding: 12px 16px;
 }
 
 .sidebar-user {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  flex-shrink: 1;
 }
 
 .sidebar-username {
-  color: var(--sidebar-text);
-  font-weight: 600;
-  font-size: var(--font-size-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .sidebar-actions {
   display: flex;
-  gap: var(--spacing-xs);
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.sidebar-actions .btn-icon {
+  flex-shrink: 0;
+  padding: 6px;
 }
 
 .sidebar-search {
