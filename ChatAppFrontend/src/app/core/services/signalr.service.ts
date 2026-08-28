@@ -17,6 +17,12 @@ export class SignalRService {
   memberPromoted$ = new Subject<{ roomId: number; userId: string }>();
   memberLeft$ = new Subject<{ roomId: number; userId: string }>();
   groupKeyRotated$ = new Subject<{ roomId: number; version: number }>();
+  incomingCall$ = new Subject<{ callerId: string; callerName: string; roomId: number; isVideo: boolean }>();
+  callOfferReceived$ = new Subject<{ callerId: string; sdp: string; roomId: number; isVideo: boolean }>();
+  callAnswerReceived$ = new Subject<{ callerId: string; sdp: string }>();
+  iceCandidateReceived$ = new Subject<{ callerId: string; candidate: string }>();
+  callRejected$ = new Subject<{ callerId: string }>();
+  callEnded$ = new Subject<{ callerId: string }>();
 
   constructor(private authService: AuthService) {}
 
@@ -97,6 +103,42 @@ export class SignalRService {
     }
   }
 
+  async callUser(targetUserId: string, roomId: number, isVideo: boolean): Promise<void> {
+  if (this.hubConnection) {
+    await this.hubConnection.invoke('CallUser', targetUserId, roomId, isVideo);
+  }
+}
+
+async sendCallOffer(targetUserId: string, sdp: string, roomId: number, isVideo: boolean): Promise<void> {
+  if (this.hubConnection) {
+    await this.hubConnection.invoke('SendCallOffer', targetUserId, sdp, roomId, isVideo);
+  }
+}
+
+async sendCallAnswer(targetUserId: string, sdp: string): Promise<void> {
+  if (this.hubConnection) {
+    await this.hubConnection.invoke('SendCallAnswer', targetUserId, sdp);
+  }
+}
+
+async sendIceCandidate(targetUserId: string, candidate: string): Promise<void> {
+  if (this.hubConnection) {
+    await this.hubConnection.invoke('SendIceCandidate', targetUserId, candidate);
+  }
+}
+
+async rejectCall(targetUserId: string): Promise<void> {
+  if (this.hubConnection) {
+    await this.hubConnection.invoke('RejectCall', targetUserId);
+  }
+}
+
+async endCall(targetUserId: string): Promise<void> {
+  if (this.hubConnection) {
+    await this.hubConnection.invoke('EndCall', targetUserId);
+  }
+}
+
   clearMessages(): void {
     this.messages$.next([]);
   }
@@ -162,6 +204,30 @@ export class SignalRService {
 
     this.hubConnection.on('GroupKeyRotated', (roomId: number, version: number) => {
       this.groupKeyRotated$.next({ roomId, version });
+    });
+
+    this.hubConnection.on('IncomingCall', (callerId: string, callerName: string, roomId: number, isVideo: boolean) => {
+      this.incomingCall$.next({ callerId, callerName, roomId, isVideo });
+    });
+
+    this.hubConnection.on('ReceiveCallOffer', (callerId: string, sdp: string, roomId: number, isVideo: boolean) => {
+      this.callOfferReceived$.next({ callerId, sdp, roomId, isVideo });
+    });
+
+    this.hubConnection.on('ReceiveCallAnswer', (callerId: string, sdp: string) => {
+      this.callAnswerReceived$.next({ callerId, sdp });
+    });
+
+    this.hubConnection.on('ReceiveIceCandidate', (callerId: string, candidate: string) => {
+      this.iceCandidateReceived$.next({ callerId, candidate });
+    });
+
+    this.hubConnection.on('CallRejected', (callerId: string) => {
+      this.callRejected$.next({ callerId });
+    });
+
+    this.hubConnection.on('CallEnded', (callerId: string) => {
+      this.callEnded$.next({ callerId });
     });
   }
 }

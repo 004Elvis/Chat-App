@@ -5,14 +5,12 @@ namespace ChatAppBackend.Hubs
 {
     public class UserIdProvider : IUserIdProvider
     {
+       
         public string? GetUserId(HubConnectionContext connection)
         {
-            var userId = connection.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-                ?? connection.User?.FindFirstValue("sub")
-                ?? connection.User?.FindFirstValue("nameid");
-
-            Console.WriteLine($"=== UserIdProvider.GetUserId: {userId} ===");
-            return userId;
+            return connection.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? connection.User?.FindFirst("sub")?.Value
+                ?? connection.User?.FindFirst("nameid")?.Value;
         }
     }
 }

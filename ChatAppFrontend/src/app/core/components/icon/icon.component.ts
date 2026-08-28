@@ -6,7 +6,8 @@ export type IconName =
   | 'logout' | 'sun' | 'moon' | 'eye' | 'eye-off' | 'search' | 'close' | 'send'
   | 'new-chat' | 'trash' | 'emoji' | 'app-logo' | 'reply'
   | 'attach' | 'camera' | 'document' | 'image' | 'video' | 'link' | 'download'
-  | 'palette' | 'mic' | 'lock';
+  | 'palette' | 'mic' | 'lock'
+  | 'phone' | 'phone-off' | 'video-call' | 'mic-off' | 'camera-off';
 
 @Component({
   selector: 'app-icon',
@@ -170,7 +171,33 @@ export type IconName =
           <path d="M12 17.5v3.5"></path>
           <path d="M8.5 21h7"></path>
         }
-      }
+
+        @case ('phone') {
+      <path d="M4.5 4.5a1.5 1.5 0 0 1 1.5-1.5h2l2 4-2 1.5a11 11 0 0 0 5 5l1.5-2 4 2v2a1.5 1.5 0 0 1-1.5 1.5A15 15 0 0 1 4.5 4.5z"></path>
+        }
+        @case ('phone-off') {
+          <path d="M4.5 4.5a1.5 1.5 0 0 1 1.5-1.5h2l2 4-2 1.5a11 11 0 0 0 5 5l1.5-2 4 2v2a1.5 1.5 0 0 1-1.5 1.5A15 15 0 0 1 4.5 4.5z" opacity="0.4"></path>
+          <path d="M2 2l20 20"></path>
+        }
+        @case ('video-call') {
+          <rect x="2.5" y="6" width="13" height="12" rx="2"></rect>
+          <path d="M15.5 10.5l6-3.5v10l-6-3.5z"></path>
+        }
+        @case ('mic-off') {
+          <path d="M2 2l20 20"></path>
+          <path d="M9 9v2a3 3 0 0 0 4.6 2.5"></path>
+          <path d="M15 9V6a3 3 0 0 0-5.9-.7"></path>
+          <path d="M5.5 11a6.5 6.5 0 0 0 9.4 5.8"></path>
+          <path d="M12 17.5v3.5"></path>
+          <path d="M8.5 21h7"></path>
+        }
+        @case ('camera-off') {
+          <path d="M2 2l20 20"></path>
+          <path d="M15.5 10.5l6-3.5v10l-6-3.5"></path>
+          <path d="M2.5 6.6V16a2 2 0 0 0 2 2h9"></path>
+          <path d="M4.5 6h8a2 2 0 0 1 2 2v1"></path>
+        }
+          }
     </svg>
   `,
   styles: [`

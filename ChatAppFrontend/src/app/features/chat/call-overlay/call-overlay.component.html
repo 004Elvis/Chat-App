@@ -1,0 +1,82 @@
+@if (callService.callState().status !== 'idle') {
+  <div class="call-overlay">
+    @if (callService.callState().status === 'ringing') {
+      <div class="call-screen">
+        <div class="call-avatar">
+          {{ (callService.callState().remoteUserName || 'U').charAt(0).toUpperCase() }}
+        </div>
+        <h2>{{ callService.callState().remoteUserName }}</h2>
+        <p class="call-status-text">
+          Incoming {{ callService.callState().isVideo ? 'video' : 'voice' }} call...
+        </p>
+
+        <div class="call-actions">
+          <button class="call-btn call-btn-reject" (click)="reject()">
+            <app-icon name="phone-off" [size]="24" class="icon-inverted"></app-icon>
+          </button>
+          <button class="call-btn call-btn-accept" (click)="accept()">
+            <app-icon name="phone" [size]="24" class="icon-inverted"></app-icon>
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (callService.callState().status === 'calling') {
+      <div class="call-screen">
+        <div class="call-avatar">
+          {{ (callService.callState().remoteUserName || 'U').charAt(0).toUpperCase() }}
+        </div>
+        <h2>{{ callService.callState().remoteUserName }}</h2>
+        <p class="call-status-text">Calling...</p>
+
+        <div class="call-actions">
+          <button class="call-btn call-btn-reject" (click)="end()">
+            <app-icon name="phone-off" [size]="24" class="icon-inverted"></app-icon>
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (callService.callState().status === 'connecting') {
+      <div class="call-screen">
+        <div class="call-avatar">
+          {{ (callService.callState().remoteUserName || 'U').charAt(0).toUpperCase() }}
+        </div>
+        <h2>{{ callService.callState().remoteUserName }}</h2>
+        <p class="call-status-text">Connecting...</p>
+      </div>
+    }
+
+    @if (callService.callState().status === 'active') {
+      <div class="call-active-screen">
+        @if (callService.callState().isVideo) {
+          <video #remoteVideo class="remote-video" autoplay playsinline></video>
+          <video #localVideo class="local-video" autoplay playsinline muted></video>
+        } @else {
+          <audio #remoteAudio autoplay></audio>
+          <div class="call-avatar call-avatar-large">
+            {{ (callService.callState().remoteUserName || 'U').charAt(0).toUpperCase() }}
+          </div>
+          <h2>{{ callService.callState().remoteUserName }}</h2>
+          <p class="call-status-text">Voice call in progress</p>
+        }
+
+        <div class="call-active-controls">
+          <button class="call-control-btn" [class.call-control-active]="callService.isMuted()" (click)="toggleMute()">
+            <app-icon [name]="callService.isMuted() ? 'mic-off' : 'mic'" [size]="20"></app-icon>
+          </button>
+
+          @if (callService.callState().isVideo) {
+            <button class="call-control-btn" [class.call-control-active]="callService.isCameraOff()" (click)="toggleCamera()">
+              <app-icon [name]="callService.isCameraOff() ? 'camera-off' : 'camera'" [size]="20"></app-icon>
+            </button>
+          }
+
+          <button class="call-btn call-btn-reject call-btn-small" (click)="end()">
+            <app-icon name="phone-off" [size]="20" class="icon-inverted"></app-icon>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+}
