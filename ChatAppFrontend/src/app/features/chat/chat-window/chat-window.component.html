@@ -32,9 +32,18 @@
       }
     </div>
 
-    <button class="btn-icon" title="Media, Docs & Links" (click)="showMediaModal.set(true)">
-      <app-icon name="image" [size]="20"></app-icon>
-    </button>
+    @if (!room.isGroup) {
+  <button class="btn-icon" title="Voice Call" (click)="startVoiceCall()">
+    <app-icon name="phone" [size]="20"></app-icon>
+  </button>
+  <button class="btn-icon" title="Video Call" (click)="startVideoCall()">
+    <app-icon name="video-call" [size]="20"></app-icon>
+  </button>
+}
+<button class="btn-icon" title="Media, Docs & Links" (click)="showMediaModal.set(true)">
+  <app-icon name="image" [size]="20"></app-icon>
+</button>
+
   </div>
 
   <!-- Messages -->

@@ -10,11 +10,12 @@ import { Message } from '../../core/models/message.model';
 import { ChatRoomListComponent } from './chat-room-list/chat-room-list.component';
 import { ChatWindowComponent } from './chat-window/chat-window.component';
 import { IconComponent } from '../../core/components/icon/icon.component';
+import { CallOverlayComponent } from './call-overlay/call-overlay.component';
 
 @Component({
   selector: 'app-chat',
   standalone: true,
-  imports: [CommonModule, AsyncPipe, ChatRoomListComponent, ChatWindowComponent, IconComponent],
+  imports: [CommonModule, AsyncPipe, ChatRoomListComponent, ChatWindowComponent, IconComponent, CallOverlayComponent],
   templateUrl: './chat.component.html',
   styleUrl: './chat.component.css'
 })

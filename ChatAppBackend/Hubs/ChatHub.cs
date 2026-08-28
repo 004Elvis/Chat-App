@@ -187,6 +187,58 @@ namespace ChatAppBackend.Hubs
                 .SendAsync("MessageDeleted", message.ChatRoomId, messageId);
         }
 
+        public async Task CallUser(string targetUserId, int roomId, bool isVideo)
+{
+    var callerId = GetUserId();
+    if (callerId == "UNKNOWN") return;
+
+    var callerName = Context.User?.FindFirstValue(ClaimTypes.Name) ?? "Someone";
+
+    await Clients.User(targetUserId).SendAsync(
+        "IncomingCall", callerId, callerName, roomId, isVideo);
+}
+
+public async Task SendCallOffer(string targetUserId, string sdp, int roomId, bool isVideo)
+{
+    var callerId = GetUserId();
+    if (callerId == "UNKNOWN") return;
+
+    await Clients.User(targetUserId).SendAsync(
+        "ReceiveCallOffer", callerId, sdp, roomId, isVideo);
+}
+
+public async Task SendCallAnswer(string targetUserId, string sdp)
+{
+    var callerId = GetUserId();
+    if (callerId == "UNKNOWN") return;
+
+    await Clients.User(targetUserId).SendAsync("ReceiveCallAnswer", callerId, sdp);
+}
+
+public async Task SendIceCandidate(string targetUserId, string candidate)
+{
+    var callerId = GetUserId();
+    if (callerId == "UNKNOWN") return;
+
+    await Clients.User(targetUserId).SendAsync("ReceiveIceCandidate", callerId, candidate);
+}
+
+public async Task RejectCall(string targetUserId)
+{
+    var callerId = GetUserId();
+    if (callerId == "UNKNOWN") return;
+
+    await Clients.User(targetUserId).SendAsync("CallRejected", callerId);
+}
+
+public async Task EndCall(string targetUserId)
+{
+    var callerId = GetUserId();
+    if (callerId == "UNKNOWN") return;
+
+    await Clients.User(targetUserId).SendAsync("CallEnded", callerId);
+}
+
         public async Task JoinRoom(int roomId)
         {
             var userId = Guid.Parse(GetUserId());

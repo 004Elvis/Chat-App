@@ -13,6 +13,7 @@ import { RoomMediaModalComponent } from '../room-media-modal/room-media-modal.co
 import { IconComponent } from '../../../core/components/icon/icon.component';
 import { ChatBackgroundService } from '../../../core/services/chat-background.service';
 import { CryptoService } from '../../../core/services/crypto.service';
+import { CallService } from '../../../core/services/call.service';
 
 @Component({
   selector: 'app-chat-window',
@@ -41,7 +42,8 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
 
   constructor(
     private bgService: ChatBackgroundService,
-    private cryptoService: CryptoService
+    private cryptoService: CryptoService,
+    private callService: CallService
   ) {}
 
   currentBackground = computed(() =>
@@ -240,4 +242,17 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
       await this.signalRService.stopTyping(this.room.id);
     }
   }
+
+  startVoiceCall(): void {
+  const other = this.getOtherMember();
+  if (!other || !this.room) return;
+  this.callService.startCall(other.id, other.userName, this.room.id, false);
+}
+
+startVideoCall(): void {
+  const other = this.getOtherMember();
+  if (!other || !this.room) return;
+  this.callService.startCall(other.id, other.userName, this.room.id, true);
+}
+
 }
