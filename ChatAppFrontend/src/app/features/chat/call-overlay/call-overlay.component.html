@@ -1,3 +1,8 @@
+
+<video #localVideo class="local-video" [class.hidden-el]="!showVideoUI" autoplay playsinline muted></video>
+<video #remoteVideo class="remote-video" [class.hidden-el]="!showVideoUI" autoplay playsinline></video>
+<audio #remoteAudio [class.hidden-el]="showVideoUI" autoplay></audio>
+
 @if (callService.callState().status !== 'idle') {
   <div class="call-overlay">
     @if (callService.callState().status === 'ringing') {
@@ -49,21 +54,22 @@
 
     @if (callService.callState().status === 'active') {
       <div class="call-active-screen">
-        @if (callService.callState().isVideo) {
-          <video #remoteVideo class="remote-video" autoplay playsinline></video>
-          <video #localVideo class="local-video" autoplay playsinline muted></video>
-        } @else {
-          <audio #remoteAudio autoplay></audio>
+        @if (!callService.callState().isVideo) {
           <div class="call-avatar call-avatar-large">
             {{ (callService.callState().remoteUserName || 'U').charAt(0).toUpperCase() }}
           </div>
           <h2>{{ callService.callState().remoteUserName }}</h2>
-          <p class="call-status-text">Voice call in progress</p>
         }
+
+        <p class="call-duration">{{ callService.formattedDuration() }}</p>
 
         <div class="call-active-controls">
           <button class="call-control-btn" [class.call-control-active]="callService.isMuted()" (click)="toggleMute()">
             <app-icon [name]="callService.isMuted() ? 'mic-off' : 'mic'" [size]="20"></app-icon>
+          </button>
+
+          <button class="call-control-btn" [class.call-control-active]="callService.isSpeakerOn()" (click)="toggleSpeaker()">
+            <app-icon name="volume" [size]="20"></app-icon>
           </button>
 
           @if (callService.callState().isVideo) {

@@ -1,5 +1,6 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, computed } from '@angular/core';
 import { SignalRService } from './signalr.service';
+import { ChatService } from './chat.service';
 import { CallState } from '../models/call.model';
 
 const ICE_SERVERS: RTCIceServer[] = [
@@ -18,17 +19,29 @@ export class CallService {
   remoteStream = signal<MediaStream | null>(null);
   isMuted = signal(false);
   isCameraOff = signal(false);
+  callDurationSeconds = signal(0);
+  isSpeakerOn = signal(false);
+
+  formattedDuration = computed(() => {
+    const total = this.callDurationSeconds();
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  });
 
   private peerConnection: RTCPeerConnection | null = null;
+  private durationTimer: any = null;
+  private callStartTime: number | null = null;
   private pendingIceCandidates: RTCIceCandidateInit[] = [];
-
-  // The offer only gets processed once the person explicitly accepts -
-  // it may arrive before or after that tap, so it's held here either
-  // way until acceptCall() actually consumes it.
   private pendingOffer: { callerId: string; sdp: string } | null = null;
   private userHasAccepted = false;
+  private wasEverActive = false;
+  private wasCaller = false;
 
-  constructor(private signalRService: SignalRService) {
+  constructor(
+    private signalRService: SignalRService,
+    private chatService: ChatService
+  ) {
     this.listenForIncomingSignals();
   }
 
@@ -44,11 +57,9 @@ export class CallService {
         status: 'ringing', remoteUserId: callerId,
         remoteUserName: callerName, roomId, isVideo
       });
+      this.wasCaller = false;
     });
 
-    // Only ever STORES the offer - never touches media or answers on
-    // its own. Processing happens exclusively inside acceptCall(),
-    // which only runs after the person taps Accept.
     this.signalRService.callOfferReceived$.subscribe(({ callerId, sdp }) => {
       this.pendingOffer = { callerId, sdp };
       if (this.userHasAccepted) {
@@ -60,6 +71,8 @@ export class CallService {
       if (!this.peerConnection) return;
       await this.peerConnection.setRemoteDescription({ type: 'answer', sdp });
       this.callState.update(s => ({ ...s, status: 'active' }));
+      this.wasEverActive = true;
+      this.startDurationTimer();
       await this.flushPendingIceCandidates();
     });
 
@@ -72,11 +85,44 @@ export class CallService {
       }
     });
 
-    this.signalRService.callRejected$.subscribe(() => this.cleanup());
-    this.signalRService.callEnded$.subscribe(() => this.cleanup());
+    this.signalRService.callRejected$.subscribe(() => {
+      const state = this.callState();
+      this.reportOutcome(state, 'Rejected');
+      this.cleanup();
+    });
+
+    this.signalRService.callEnded$.subscribe(() => {
+      const state = this.callState();
+      this.reportOutcome(state, this.wasEverActive ? 'Completed' : 'Missed');
+      this.cleanup();
+    });
+  }
+
+  
+  private reportOutcome(state: CallState, status: string): void {
+    if (!this.wasCaller || !state.remoteUserId || !state.roomId) return;
+
+    this.chatService.logCall(
+      state.roomId, state.remoteUserId, state.isVideo,
+      this.callDurationSeconds(), status
+    ).subscribe({
+      error: (err) => console.error('Could not log call:', err)
+    });
+  }
+
+  private startDurationTimer(): void {
+    this.callStartTime = Date.now();
+    this.callDurationSeconds.set(0);
+    this.durationTimer = setInterval(() => {
+      if (this.callStartTime) {
+        this.callDurationSeconds.set(Math.floor((Date.now() - this.callStartTime) / 1000));
+      }
+    }, 1000);
   }
 
   async startCall(targetUserId: string, targetUserName: string, roomId: number, isVideo: boolean): Promise<void> {
+    this.wasEverActive = false;
+    this.wasCaller = true;
     if (this.callState().status !== 'idle') return;
 
     this.callState.set({
@@ -103,19 +149,36 @@ export class CallService {
     }
   }
 
-  // Called when the person taps "Accept" - this is the ONLY path that
-  // requests mic/camera access and answers, and only ever after
-  // explicit user action.
   async acceptCall(): Promise<void> {
+    this.wasEverActive = false;
     this.userHasAccepted = true;
     this.callState.update(s => ({ ...s, status: 'connecting' }));
 
     if (this.pendingOffer) {
       await this.processAcceptedCall();
     }
-    // If the offer hasn't arrived yet, processAcceptedCall() will run
-    // automatically the moment callOfferReceived$ fires, since
-    // userHasAccepted is now true.
+  }
+
+  async toggleSpeaker(audioEl?: HTMLAudioElement, videoEl?: HTMLVideoElement): Promise<void> {
+    const next = !this.isSpeakerOn();
+    const targets = [audioEl, videoEl].filter(Boolean) as (HTMLAudioElement | HTMLVideoElement)[];
+
+    for (const el of targets) {
+      const anyEl = el as any;
+      if (typeof anyEl.setSinkId === 'function') {
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const speaker = devices.find(d =>
+            d.kind === 'audiooutput' && /speaker/i.test(d.label)
+          );
+          await anyEl.setSinkId(next ? (speaker?.deviceId || 'default') : 'default');
+        } catch (err) {
+          console.warn('setSinkId not permitted or failed:', err);
+        }
+      }
+    }
+
+    this.isSpeakerOn.set(next);
   }
 
   private async processAcceptedCall(): Promise<void> {
@@ -140,6 +203,8 @@ export class CallService {
 
       await this.signalRService.sendCallAnswer(offer.callerId, answer.sdp!);
       this.callState.update(s => ({ ...s, status: 'active' }));
+      this.wasEverActive = true;
+      this.startDurationTimer();
     } catch (err) {
       console.error('Could not answer call:', err);
       this.cleanup();
@@ -147,14 +212,22 @@ export class CallService {
   }
 
   async rejectCall(): Promise<void> {
-    const remoteId = this.callState().remoteUserId;
+    const state = this.callState();
+    const remoteId = state.remoteUserId;
+
     if (remoteId) await this.signalRService.rejectCall(remoteId);
+
+    this.reportOutcome(state, 'Rejected');
     this.cleanup();
   }
 
   async endCall(): Promise<void> {
-    const remoteId = this.callState().remoteUserId;
+    const state = this.callState();
+    const remoteId = state.remoteUserId;
+
     if (remoteId) await this.signalRService.endCall(remoteId);
+    this.reportOutcome(state, this.wasEverActive ? 'Completed' : 'Cancelled');
+
     this.cleanup();
   }
 
@@ -203,6 +276,8 @@ export class CallService {
   }
 
   private cleanup(): void {
+    clearInterval(this.durationTimer);
+    this.durationTimer = null;
     this.localStream()?.getTracks().forEach(t => t.stop());
     this.peerConnection?.close();
     this.peerConnection = null;
@@ -214,6 +289,9 @@ export class CallService {
     this.remoteStream.set(null);
     this.isMuted.set(false);
     this.isCameraOff.set(false);
+    this.callDurationSeconds.set(0);
+    this.isSpeakerOn.set(false);
+    this.callStartTime = null;
     this.callState.set({
       status: 'idle', remoteUserId: null, remoteUserName: null,
       roomId: null, isVideo: false

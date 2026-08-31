@@ -17,6 +17,7 @@ namespace ChatAppBackend.Data
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<EmailVerificationToken> EmailVerificationTokens { get; set; }
         public DbSet<GroupKeyEntry> GroupKeyEntries { get; set; }
+        public DbSet<CallLog> CallLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -110,6 +111,26 @@ namespace ChatAppBackend.Data
                         .OnDelete(DeleteBehavior.Restrict);
 
                     entity.HasIndex(k => new { k.ChatRoomId, k.KeyVersion, k.UserId });
+                });
+
+                modelBuilder.Entity<CallLog>(entity =>
+                {
+                    entity.HasOne(c => c.ChatRoom)
+                        .WithMany()
+                        .HasForeignKey(c => c.ChatRoomId)
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    entity.HasOne(c => c.Caller)
+                        .WithMany()
+                        .HasForeignKey(c => c.CallerId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    entity.HasOne(c => c.Receiver)
+                        .WithMany()
+                        .HasForeignKey(c => c.ReceiverId)
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    entity.HasIndex(c => new { c.ChatRoomId, c.StartedAt });
                 });
         }
     }

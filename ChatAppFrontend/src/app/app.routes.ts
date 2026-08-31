@@ -8,18 +8,21 @@ export const routes: Routes = [
     redirectTo: 'chat',
     pathMatch: 'full'
   },
+
   {
     path: 'login',
     loadComponent: () =>
       import('./features/auth/login/login.component')
         .then(m => m.LoginComponent)
   },
+
   {
     path: 'register',
     loadComponent: () =>
       import('./features/auth/register/register.component')
         .then(m => m.RegisterComponent)
   },
+
   {
     path: 'chat',
     loadComponent: () =>
@@ -27,6 +30,7 @@ export const routes: Routes = [
         .then(m => m.ChatComponent),
     canActivate: [authGuard]
   },
+
   {
   path: 'admin',
   loadComponent: () =>
@@ -41,20 +45,32 @@ export const routes: Routes = [
     import('./features/auth/forgot-password/forgot-password.component')
       .then(m => m.ForgotPasswordComponent)
 },
+
 {
   path: 'reset-password',
   loadComponent: () =>
     import('./features/auth/reset-password/reset-password.component')
       .then(m => m.ResetPasswordComponent)
 },
+
 {
   path: 'set-password',
   loadComponent: () =>
     import('./features/auth/set-password/set-password.component')
       .then(m => m.SetPasswordComponent)
 },
+
+{
+  path: 'calls',
+  loadComponent: () =>
+    import('./features/calls/call-logs-page/call-logs-page.component')
+      .then(m => m.CallLogsPageComponent),
+  canActivate: [authGuard]
+},
+
   {
     path: '**',
     redirectTo: 'chat'
   }
+  
 ];
