@@ -1,0 +1,55 @@
+<div class="call-logs-page">
+  <div class="logs-header">
+    <div>
+      <h1>Call History</h1>
+      <p>All your voice and video calls</p>
+    </div>
+    <a routerLink="/chat" class="btn btn-secondary">Back to Chat</a>
+  </div>
+
+  @if (loading()) {
+    <p class="logs-status">Loading...</p>
+  } @else if (error()) {
+    <p class="logs-status logs-error">{{ error() }}</p>
+  } @else if (logs().length === 0) {
+    <div class="logs-empty">
+      <app-icon name="call-log" [size]="48"></app-icon>
+      <p>No calls yet</p>
+      <span>Your voice and video call history will appear here.</span>
+    </div>
+  } @else {
+    <div class="logs-list">
+      @for (log of logs(); track log.id) {
+        <div class="log-row">
+          <div class="avatar">
+            @if (log.otherUserAvatarUrl) {
+              <img [src]="log.otherUserAvatarUrl" alt="avatar" class="avatar-img" />
+            } @else {
+              {{ getInitials(log.otherUserName) }}
+            }
+          </div>
+
+          <div class="log-info">
+            <span class="log-name">{{ log.otherUserName }}</span>
+            <div class="log-meta">
+              <app-icon
+                [name]="callIcon(log)"
+                [size]="13"
+                [class.log-icon-missed]="log.status === 'Missed' && !log.wasOutgoing"
+                class="log-direction-icon"
+              ></app-icon>
+              <span>{{ formatDate(log.startedAt) }}, {{ formatTime(log.startedAt) }}</span>
+            </div>
+          </div>
+
+          <div class="log-right">
+            <app-icon [name]="log.isVideo ? 'video-call' : 'phone'" [size]="16" class="log-type-icon"></app-icon>
+            <span class="log-status" [class.log-status-missed]="log.status === 'Missed' && !log.wasOutgoing">
+              {{ statusLabel(log) }}
+            </span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

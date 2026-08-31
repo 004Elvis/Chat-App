@@ -1,0 +1,140 @@
+.call-logs-page {
+  min-height: 100vh;
+  background: var(--bg);
+  padding: var(--spacing-xl);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.logs-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-xl);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.logs-header h1 {
+  font-size: var(--font-size-2xl);
+  color: var(--text-primary);
+}
+
+.logs-header p {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.logs-header .btn {
+  width: auto;
+  padding: 10px 20px;
+}
+
+.logs-status {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: var(--spacing-xl);
+}
+
+.logs-error {
+  color: var(--danger-text);
+}
+
+.logs-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  padding: 64px 16px;
+  text-align: center;
+}
+
+.logs-empty p {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 8px;
+}
+
+.logs-empty span {
+  font-size: var(--font-size-sm);
+}
+
+.logs-list {
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.log-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.log-row:last-child {
+  border-bottom: none;
+}
+
+.log-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.log-name {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.log-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.log-direction-icon {
+  color: var(--success-text, #16a34a);
+  flex-shrink: 0;
+}
+
+.log-icon-missed {
+  color: var(--danger-text);
+}
+
+.log-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.log-type-icon {
+  color: var(--text-secondary);
+}
+
+.log-status {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.log-status-missed {
+  color: var(--danger-text);
+  font-weight: 600;
+}
+
+@media (max-width: 480px) {
+  .call-logs-page {
+    padding: var(--spacing-md);
+  }
+}

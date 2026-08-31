@@ -8,3 +8,18 @@ export interface CallState {
   roomId: number | null;
   isVideo: boolean;
 }
+
+export interface CallLog {
+  id: number;
+  chatRoomId: number;
+  roomName: string;
+  isGroup: boolean;
+  otherUserId: string;
+  otherUserName: string;
+  otherUserAvatarUrl?: string;
+  isVideo: boolean;
+  wasOutgoing: boolean;
+  startedAt: string;
+  durationSeconds: number;
+  status: 'Completed' | 'Rejected' | 'Missed' | 'Cancelled';
+}

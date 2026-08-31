@@ -1,3 +1,30 @@
+.hidden-el {
+  display: none !important;
+}
+
+.local-video {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 140px;
+  height: 190px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: #222;
+  z-index: 3001;
+}
+
+.remote-video {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #111;
+  z-index: 2999;
+}
+
 .call-overlay {
   position: fixed;
   inset: 0;
@@ -18,68 +45,91 @@
 }
 
 .call-avatar {
-  width: 96px;
-  height: 96px;
+  width: 110px;
+  height: 110px;
   border-radius: 50%;
   background: var(--primary);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.5rem;
+  font-size: 2.75rem;
   font-weight: 700;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.06);
 }
 
 .call-avatar-large {
-  width: 120px;
-  height: 120px;
-  font-size: 3rem;
+  width: 130px;
+  height: 130px;
+  font-size: 3.25rem;
 }
 
 .call-screen h2 {
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   color: white;
+  font-weight: 600;
 }
 
 .call-status-text {
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 1rem;
 }
 
+.call-duration {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  margin: 8px 0 0 0;
+}
+
+/* Bigger, clearer, more inviting accept/reject buttons */
 .call-actions {
   display: flex;
-  gap: 40px;
-  margin-top: 32px;
+  gap: 64px;
+  margin-top: 48px;
 }
 
 .call-btn {
-  width: 64px;
-  height: 64px;
+  width: 76px;
+  height: 76px;
   border-radius: 50%;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 
 .call-btn:hover {
-  transform: scale(1.08);
+  transform: scale(1.1);
+}
+
+.call-btn:active {
+  transform: scale(0.96);
 }
 
 .call-btn-reject {
   background: #ef4444;
+  box-shadow: 0 6px 24px rgba(239, 68, 68, 0.45);
 }
 
 .call-btn-accept {
   background: #22c55e;
+  box-shadow: 0 6px 24px rgba(34, 197, 94, 0.45);
+  animation: acceptPulse 1.8s infinite;
+}
+
+@keyframes acceptPulse {
+  0%, 100% { box-shadow: 0 6px 24px rgba(34, 197, 94, 0.45); }
+  50% { box-shadow: 0 6px 32px rgba(34, 197, 94, 0.75), 0 0 0 10px rgba(34, 197, 94, 0.12); }
 }
 
 .call-btn-small {
-  width: 52px;
-  height: 52px;
+  width: 60px;
+  height: 60px;
 }
 
 .call-active-screen {
@@ -91,43 +141,27 @@
   align-items: center;
   justify-content: center;
   color: white;
-}
-
-.remote-video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  background: #111;
-}
-
-.local-video {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 140px;
-  height: 190px;
-  object-fit: cover;
-  border-radius: 12px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  background: #222;
+  z-index: 3000;
 }
 
 .call-active-controls {
-  position: absolute;
+  position: fixed;
   bottom: 40px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   gap: 20px;
   align-items: center;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 12px 20px;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 14px 22px;
   border-radius: 999px;
+  z-index: 3002;
+  backdrop-filter: blur(6px);
 }
 
 .call-control-btn {
-  width: 48px;
-  height: 48px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   border: none;
   background: rgba(255, 255, 255, 0.15);
@@ -136,10 +170,15 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.call-control-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 .call-control-active {
-  background: rgba(239, 68, 68, 0.8);
+  background: rgba(239, 68, 68, 0.85);
 }
 
 @media (max-width: 480px) {
@@ -148,5 +187,14 @@
     height: 140px;
     top: 12px;
     right: 12px;
+  }
+
+  .call-actions {
+    gap: 48px;
+  }
+
+  .call-btn {
+    width: 68px;
+    height: 68px;
   }
 }

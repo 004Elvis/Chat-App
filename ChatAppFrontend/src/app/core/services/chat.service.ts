@@ -6,6 +6,7 @@ import { Message } from '../models/message.model';
 import { RoomMedia } from '../models/room-media.model';
 import { environment } from '../../../environments/environment';
 import { GroupKeyResponse, GroupKeyVersionInfo } from '../models/group-key.model';
+import { CallLog } from '../models/call.model';
 
 export interface AttachmentUploadResult {
   fileUrl: string;
@@ -92,4 +93,17 @@ distributeGroupKey(roomId: number, version: number, distributorPublicKey: string
     version, distributorPublicKey, entries
   });
 }
+
+logCall(chatRoomId: number, receiverId: string, isVideo: boolean,
+  durationSeconds: number, status: string): Observable<any> {
+  return this.http.post(`${environment.apiUrl}/calllogs`, {
+    chatRoomId, receiverId, isVideo, durationSeconds, status
+  });
+}
+
+getCallLogs(roomId?: number): Observable<CallLog[]> {
+  const params = roomId ? `?roomId=${roomId}` : '';
+  return this.http.get<CallLog[]>(`${environment.apiUrl}/calllogs${params}`);
+}
+
 }

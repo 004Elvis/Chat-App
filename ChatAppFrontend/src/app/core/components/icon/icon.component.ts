@@ -7,7 +7,8 @@ export type IconName =
   | 'new-chat' | 'trash' | 'emoji' | 'app-logo' | 'reply'
   | 'attach' | 'camera' | 'document' | 'image' | 'video' | 'link' | 'download'
   | 'palette' | 'mic' | 'lock'
-  | 'phone' | 'phone-off' | 'video-call' | 'mic-off' | 'camera-off';
+  | 'phone' | 'phone-off' | 'video-call' | 'mic-off' | 'camera-off'
+  | 'volume' | 'call-log' | 'call-incoming' | 'call-outgoing' | 'call-missed';
 
 @Component({
   selector: 'app-icon',
@@ -196,6 +197,30 @@ export type IconName =
           <path d="M15.5 10.5l6-3.5v10l-6-3.5"></path>
           <path d="M2.5 6.6V16a2 2 0 0 0 2 2h9"></path>
           <path d="M4.5 6h8a2 2 0 0 1 2 2v1"></path>
+        }
+
+        @case ('volume') {
+          <path d="M4 9v6h4l5 4V5L8 9H4z"></path>
+          <path d="M17 8a5 5 0 0 1 0 8"></path>
+          <path d="M19.5 5.5a9 9 0 0 1 0 13"></path>
+        }
+        @case ('call-log') {
+          <rect x="4" y="2.5" width="16" height="19" rx="2"></rect>
+          <path d="M8 7h8"></path>
+          <path d="M8 11h8"></path>
+          <path d="M8 15h5"></path>
+        }
+        @case ('call-incoming') {
+          <path d="M16 2L8 10"></path>
+          <path d="M9.5 2H16v6.5"></path>
+        }
+        @case ('call-outgoing') {
+          <path d="M8 2l8 8"></path>
+          <path d="M14.5 2H8v6.5"></path>
+        }
+        @case ('call-missed') {
+          <path d="M16 8L8 16"></path>
+          <path d="M9.5 16H16V9.5"></path>
         }
           }
     </svg>
