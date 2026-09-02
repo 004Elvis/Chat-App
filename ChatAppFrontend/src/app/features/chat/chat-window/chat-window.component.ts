@@ -14,6 +14,7 @@ import { IconComponent } from '../../../core/components/icon/icon.component';
 import { ChatBackgroundService } from '../../../core/services/chat-background.service';
 import { CryptoService } from '../../../core/services/crypto.service';
 import { CallService } from '../../../core/services/call.service';
+import { GroupCallService } from '../../../core/services/group-call.service';
 
 @Component({
   selector: 'app-chat-window',
@@ -43,7 +44,8 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
   constructor(
     private bgService: ChatBackgroundService,
     private cryptoService: CryptoService,
-    private callService: CallService
+    private callService: CallService,
+    private groupCallService: GroupCallService
   ) {}
 
   currentBackground = computed(() =>
@@ -55,7 +57,7 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
     this.refreshEncryptionStatus();
   }
 
- private async refreshEncryptionStatus(): Promise<void> {
+  private async refreshEncryptionStatus(): Promise<void> {
   if (!this.room || !this.currentUser) {
     this.isEncrypted.set(false);
     return;
@@ -244,15 +246,24 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
   }
 
   startVoiceCall(): void {
-  const other = this.getOtherMember();
-  if (!other || !this.room) return;
-  this.callService.startCall(other.id, other.userName, this.room.id, false);
-}
+    const other = this.getOtherMember();
+    if (!other || !this.room) return;
+    this.callService.startCall(other.id, other.userName, this.room.id, false);
+  }
 
-startVideoCall(): void {
-  const other = this.getOtherMember();
-  if (!other || !this.room) return;
-  this.callService.startCall(other.id, other.userName, this.room.id, true);
-}
+  startVideoCall(): void {
+    const other = this.getOtherMember();
+    if (!other || !this.room) return;
+    this.callService.startCall(other.id, other.userName, this.room.id, true);
+  }
 
+  startGroupVoiceCall(): void {
+    if (!this.room) return;
+    this.groupCallService.startCall(this.room.id, false);
+  }
+
+  startGroupVideoCall(): void {
+    if (!this.room) return;
+    this.groupCallService.startCall(this.room.id, true);
+  }
 }

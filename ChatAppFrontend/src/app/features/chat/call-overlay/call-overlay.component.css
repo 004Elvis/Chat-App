@@ -181,6 +181,17 @@
   background: rgba(239, 68, 68, 0.85);
 }
 
+.call-duration-video {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 6px 14px;
+  border-radius: 999px;
+  z-index: 3002;
+  margin: 0;
+}
+
 @media (max-width: 480px) {
   .local-video {
     width: 100px;
