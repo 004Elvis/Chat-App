@@ -1,0 +1,70 @@
+@if (callService.callState().status !== 'idle') {
+  <div class="gc-overlay">
+
+    @if (callService.callState().status === 'incoming') {
+      <div class="gc-screen">
+        <div class="gc-avatar">
+          <app-icon name="add-member" [size]="36" class="icon-inverted"></app-icon>
+        </div>
+        <h2>Group {{ callService.callState().isVideo ? 'video' : 'voice' }} call</h2>
+        <p class="gc-status-text">{{ callService.callState().incomingCallerName }} started a call</p>
+
+        <div class="gc-actions">
+          <button class="gc-btn gc-btn-reject" (click)="decline()">
+            <app-icon name="phone-off" [size]="24" class="icon-inverted"></app-icon>
+          </button>
+          <button class="gc-btn gc-btn-accept" (click)="accept()">
+            <app-icon name="phone" [size]="24" class="icon-inverted"></app-icon>
+          </button>
+        </div>
+      </div>
+    }
+
+    @if (callService.callState().status === 'active') {
+      <div class="gc-active">
+        <div class="gc-header">
+          <span>{{ participantList.length + 1 }} in call</span>
+          <span class="gc-duration">{{ callService.formattedDuration() }}</span>
+        </div>
+
+        <div class="gc-grid" [class.gc-grid-audio-only]="!callService.callState().isVideo">
+          @for (p of participantList; track p.userId) {
+            <div class="gc-tile">
+              @if (callService.callState().isVideo && p.stream) {
+                <video
+                  [appVideoStream]="p.stream"
+                  autoplay playsinline
+                ></video>
+              } @else {
+                <div class="gc-tile-avatar">{{ getInitials(p.userName) }}</div>
+              }
+              <span class="gc-tile-name">{{ p.userName }}</span>
+            </div>
+          }
+
+          @if (participantList.length === 0) {
+            <div class="gc-waiting">
+              <p>Waiting for others to join...</p>
+            </div>
+          }
+        </div>
+
+        <div class="gc-controls">
+          <button class="gc-control-btn" [class.gc-control-active]="callService.isMuted()" (click)="toggleMute()">
+            <app-icon [name]="callService.isMuted() ? 'mic-off' : 'mic'" [size]="20"></app-icon>
+          </button>
+
+          @if (callService.callState().isVideo) {
+            <button class="gc-control-btn" [class.gc-control-active]="callService.isCameraOff()" (click)="toggleCamera()">
+              <app-icon [name]="callService.isCameraOff() ? 'camera-off' : 'camera'" [size]="20"></app-icon>
+            </button>
+          }
+
+          <button class="gc-btn gc-btn-reject gc-btn-small" (click)="leave()">
+            <app-icon name="phone-off" [size]="20" class="icon-inverted"></app-icon>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+}

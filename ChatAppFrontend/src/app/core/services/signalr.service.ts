@@ -23,6 +23,11 @@ export class SignalRService {
   iceCandidateReceived$ = new Subject<{ callerId: string; candidate: string }>();
   callRejected$ = new Subject<{ callerId: string }>();
   callEnded$ = new Subject<{ callerId: string }>();
+  
+  groupCallStarted$ = new Subject<{ roomId: number; callerId: string; callerName: string; isVideo: boolean }>();
+  existingParticipants$ = new Subject<{ roomId: number; participants: { userId: string; userName: string }[] }>();
+  participantJoined$ = new Subject<{ roomId: number; userId: string; userName: string }>();
+  participantLeft$ = new Subject<{ roomId: number; userId: string }>();
 
   constructor(private authService: AuthService) {}
 
@@ -139,6 +144,18 @@ async endCall(targetUserId: string): Promise<void> {
   }
 }
 
+async startGroupCall(roomId: number, isVideo: boolean): Promise<void> {
+  if (this.hubConnection) await this.hubConnection.invoke('StartGroupCall', roomId, isVideo);
+}
+
+async joinGroupCall(roomId: number, isVideo: boolean): Promise<void> {
+  if (this.hubConnection) await this.hubConnection.invoke('JoinGroupCall', roomId, isVideo);
+}
+
+async leaveGroupCall(roomId: number): Promise<void> {
+  if (this.hubConnection) await this.hubConnection.invoke('LeaveGroupCall', roomId);
+}
+
   clearMessages(): void {
     this.messages$.next([]);
   }
@@ -228,6 +245,22 @@ async endCall(targetUserId: string): Promise<void> {
 
     this.hubConnection.on('CallEnded', (callerId: string) => {
       this.callEnded$.next({ callerId });
+    });
+
+    this.hubConnection.on('GroupCallStarted', (roomId: number, callerId: string, callerName: string, isVideo: boolean) => {
+      this.groupCallStarted$.next({ roomId, callerId, callerName, isVideo });
+    });
+
+    this.hubConnection.on('ExistingParticipants', (roomId: number, participants: { userId: string; userName: string }[]) => {
+      this.existingParticipants$.next({ roomId, participants });
+    });
+
+    this.hubConnection.on('ParticipantJoined', (roomId: number, userId: string, userName: string) => {
+      this.participantJoined$.next({ roomId, userId, userName });
+    });
+
+    this.hubConnection.on('ParticipantLeft', (roomId: number, userId: string) => {
+      this.participantLeft$.next({ roomId, userId });
     });
   }
 }

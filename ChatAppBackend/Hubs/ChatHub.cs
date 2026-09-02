@@ -13,6 +13,8 @@ namespace ChatAppBackend.Hubs
         private readonly ApplicationDbContext _context;
 
         private static readonly Dictionary<string, string> OnlineUsers = new();
+        private static readonly Dictionary<int, HashSet<(string UserId, string UserName)>> ActiveGroupCalls = new();
+        private static readonly object GroupCallLock = new();
 
         public ChatHub(ApplicationDbContext context)
         {
@@ -58,110 +60,111 @@ namespace ChatAppBackend.Hubs
         }
 
         public async Task SendMessage(int roomId, string content, int? replyToMessageId = null, AttachmentInputDto? attachment = null)
-{
-    string messageType = attachment?.MessageType ?? "Text";
-    Console.WriteLine($"=== SEND MESSAGE: room={roomId} content={content} ===");
-
-    var userIdStr = GetUserId();
-    Console.WriteLine($"=== USER ID: {userIdStr} ===");
-
-    if (userIdStr == "UNKNOWN")
-    {
-        await Clients.Caller.SendAsync("Error", "Not authenticated");
-        return;
-    }
-
-    var userId = Guid.Parse(userIdStr);
-
-    int? validReplyId = null;
-    if (replyToMessageId.HasValue)
-    {
-        var replyExists = await _context.Messages.AnyAsync(m =>
-            m.Id == replyToMessageId.Value && m.ChatRoomId == roomId);
-        if (replyExists) validReplyId = replyToMessageId;
-    }
-
-    var message = new Message
-    {
-        ChatRoomId = roomId,
-        SenderId = userId,
-        Content = content,
-        MessageType = messageType,
-        SentAt = DateTime.UtcNow,
-        IsDeleted = false,
-        ReplyToMessageId = validReplyId
-    };
-
-    _context.Messages.Add(message);
-    await _context.SaveChangesAsync();
-
-    AttachmentDto? attachmentDto = null;
-    if (attachment != null && !string.IsNullOrEmpty(attachment.FileUrl))
-    {
-        var messageAttachment = new MessageAttachment
         {
-            MessageId = message.Id,
-            FileUrl = attachment.FileUrl,
-            FileName = attachment.FileName,
-            FileType = attachment.FileType,
-            FileSizeBytes = attachment.FileSizeBytes
-        };
-        _context.MessageAttachments.Add(messageAttachment);
-        await _context.SaveChangesAsync();
+            string messageType = attachment?.MessageType ?? "Text";
+            Console.WriteLine($"=== SEND MESSAGE: room={roomId} content={content} ===");
 
-        attachmentDto = new AttachmentDto
-        {
-            Id = messageAttachment.Id,
-            FileUrl = messageAttachment.FileUrl,
-            FileName = messageAttachment.FileName,
-            FileType = messageAttachment.FileType,
-            FileSizeBytes = messageAttachment.FileSizeBytes
-        };
-    }
+            var userIdStr = GetUserId();
+            Console.WriteLine($"=== USER ID: {userIdStr} ===");
 
-    var sender = await _context.Users.FindAsync(userId);
-
-    ReplyPreviewDto? replyPreview = null;
-    if (validReplyId.HasValue)
-    {
-        var replied = await _context.Messages
-            .Include(m => m.Sender)
-            .FirstOrDefaultAsync(m => m.Id == validReplyId.Value);
-
-        if (replied != null)
-        {
-            replyPreview = new ReplyPreviewDto
+            if (userIdStr == "UNKNOWN")
             {
-                Id = replied.Id,
-                SenderUserName = replied.Sender.UserName,
-                Content = replied.IsDeleted
-                    ? "This message was deleted"
-                    : replied.Content,
-                IsDeleted = replied.IsDeleted
+                await Clients.Caller.SendAsync("Error", "Not authenticated");
+                return;
+            }
+
+            var userId = Guid.Parse(userIdStr);
+
+            int? validReplyId = null;
+            if (replyToMessageId.HasValue)
+            {
+                var replyExists = await _context.Messages.AnyAsync(m =>
+                    m.Id == replyToMessageId.Value && m.ChatRoomId == roomId);
+                if (replyExists) validReplyId = replyToMessageId;
+            }
+
+            var message = new Message
+            {
+                ChatRoomId = roomId,
+                SenderId = userId,
+                Content = content,
+                MessageType = messageType,
+                SentAt = DateTime.UtcNow,
+                IsDeleted = false,
+                ReplyToMessageId = validReplyId
             };
+
+            _context.Messages.Add(message);
+            await _context.SaveChangesAsync();
+
+            AttachmentDto? attachmentDto = null;
+            if (attachment != null && !string.IsNullOrEmpty(attachment.FileUrl))
+            {
+                var messageAttachment = new MessageAttachment
+                {
+                    MessageId = message.Id,
+                    FileUrl = attachment.FileUrl,
+                    FileName = attachment.FileName,
+                    FileType = attachment.FileType,
+                    FileSizeBytes = attachment.FileSizeBytes
+                };
+                _context.MessageAttachments.Add(messageAttachment);
+                await _context.SaveChangesAsync();
+
+                attachmentDto = new AttachmentDto
+                {
+                    Id = messageAttachment.Id,
+                    FileUrl = messageAttachment.FileUrl,
+                    FileName = messageAttachment.FileName,
+                    FileType = messageAttachment.FileType,
+                    FileSizeBytes = messageAttachment.FileSizeBytes
+                };
+            }
+
+            var sender = await _context.Users.FindAsync(userId);
+
+            ReplyPreviewDto? replyPreview = null;
+            if (validReplyId.HasValue)
+            {
+                var replied = await _context.Messages
+                    .Include(m => m.Sender)
+                    .FirstOrDefaultAsync(m => m.Id == validReplyId.Value);
+
+                if (replied != null)
+                {
+                    replyPreview = new ReplyPreviewDto
+                    {
+                        Id = replied.Id,
+                        SenderUserName = replied.Sender.UserName,
+                        Content = replied.IsDeleted
+                            ? "This message was deleted"
+                            : replied.Content,
+                        IsDeleted = replied.IsDeleted
+                    };
+                }
+            }
+
+            var messageDto = new MessageDto
+            {
+                Id = message.Id,
+                ChatRoomId = message.ChatRoomId,
+                SenderId = message.SenderId,
+                SenderUserName = sender?.UserName ?? "Unknown",
+                SenderAvatarUrl = sender?.AvatarUrl,
+                Content = message.Content,
+                MessageType = message.MessageType,
+                SentAt = message.SentAt,
+                IsDeleted = false,
+                ReplyTo = replyPreview,
+                Attachment = attachmentDto
+            };
+
+            await Clients.Group(roomId.ToString())
+                .SendAsync("ReceiveMessage", messageDto);
+
+            Console.WriteLine($"=== MESSAGE SAVED AND BROADCAST ===");
         }
-    }
 
-    var messageDto = new MessageDto
-    {
-        Id = message.Id,
-        ChatRoomId = message.ChatRoomId,
-        SenderId = message.SenderId,
-        SenderUserName = sender?.UserName ?? "Unknown",
-        SenderAvatarUrl = sender?.AvatarUrl,
-        Content = message.Content,
-        MessageType = message.MessageType,
-        SentAt = message.SentAt,
-        IsDeleted = false,
-        ReplyTo = replyPreview,
-        Attachment = attachmentDto
-    };
-
-    await Clients.Group(roomId.ToString())
-        .SendAsync("ReceiveMessage", messageDto);
-
-    Console.WriteLine($"=== MESSAGE SAVED AND BROADCAST ===");
-}
         public async Task DeleteMessage(int messageId)
         {
             var userIdStr = GetUserId();
@@ -188,56 +191,124 @@ namespace ChatAppBackend.Hubs
         }
 
         public async Task CallUser(string targetUserId, int roomId, bool isVideo)
-{
-    var callerId = GetUserId();
-    if (callerId == "UNKNOWN") return;
+        {
+            var callerId = GetUserId();
+            if (callerId == "UNKNOWN") return;
 
-    var callerName = Context.User?.FindFirstValue(ClaimTypes.Name) ?? "Someone";
+            var callerName = Context.User?.FindFirstValue(ClaimTypes.Name) ?? "Someone";
 
-    await Clients.User(targetUserId).SendAsync(
-        "IncomingCall", callerId, callerName, roomId, isVideo);
-}
+            await Clients.User(targetUserId).SendAsync(
+                "IncomingCall", callerId, callerName, roomId, isVideo);
+        }
 
-public async Task SendCallOffer(string targetUserId, string sdp, int roomId, bool isVideo)
-{
-    var callerId = GetUserId();
-    if (callerId == "UNKNOWN") return;
+        public async Task SendCallOffer(string targetUserId, string sdp, int roomId, bool isVideo)
+        {
+            var callerId = GetUserId();
+            if (callerId == "UNKNOWN") return;
 
-    await Clients.User(targetUserId).SendAsync(
-        "ReceiveCallOffer", callerId, sdp, roomId, isVideo);
-}
+            await Clients.User(targetUserId).SendAsync(
+                "ReceiveCallOffer", callerId, sdp, roomId, isVideo);
+        }
 
-public async Task SendCallAnswer(string targetUserId, string sdp)
-{
-    var callerId = GetUserId();
-    if (callerId == "UNKNOWN") return;
+        public async Task SendCallAnswer(string targetUserId, string sdp)
+        {
+            var callerId = GetUserId();
+            if (callerId == "UNKNOWN") return;
 
-    await Clients.User(targetUserId).SendAsync("ReceiveCallAnswer", callerId, sdp);
-}
+            await Clients.User(targetUserId).SendAsync("ReceiveCallAnswer", callerId, sdp);
+        }
 
-public async Task SendIceCandidate(string targetUserId, string candidate)
-{
-    var callerId = GetUserId();
-    if (callerId == "UNKNOWN") return;
+        public async Task SendIceCandidate(string targetUserId, string candidate)
+        {
+            var callerId = GetUserId();
+            if (callerId == "UNKNOWN") return;
 
-    await Clients.User(targetUserId).SendAsync("ReceiveIceCandidate", callerId, candidate);
-}
+            await Clients.User(targetUserId).SendAsync("ReceiveIceCandidate", callerId, candidate);
+        }
 
-public async Task RejectCall(string targetUserId)
-{
-    var callerId = GetUserId();
-    if (callerId == "UNKNOWN") return;
+        public async Task RejectCall(string targetUserId)
+        {
+            var callerId = GetUserId();
+            if (callerId == "UNKNOWN") return;
 
-    await Clients.User(targetUserId).SendAsync("CallRejected", callerId);
-}
+            await Clients.User(targetUserId).SendAsync("CallRejected", callerId);
+        }
 
-public async Task EndCall(string targetUserId)
-{
-    var callerId = GetUserId();
-    if (callerId == "UNKNOWN") return;
+        public async Task EndCall(string targetUserId)
+        {
+            var callerId = GetUserId();
+            if (callerId == "UNKNOWN") return;
 
-    await Clients.User(targetUserId).SendAsync("CallEnded", callerId);
-}
+            await Clients.User(targetUserId).SendAsync("CallEnded", callerId);
+        }
+
+        public async Task StartGroupCall(int roomId, bool isVideo)
+        {
+            var callerId = GetUserId();
+            if (callerId == "UNKNOWN") return;
+            var callerName = Context.User?.FindFirstValue(ClaimTypes.Name) ?? "Someone";
+
+            lock (GroupCallLock)
+            {
+                if (!ActiveGroupCalls.ContainsKey(roomId))
+                    ActiveGroupCalls[roomId] = new HashSet<(string, string)>();
+                ActiveGroupCalls[roomId].Add((callerId, callerName));
+            }
+
+            // Rings everyone else currently in the room - not just people
+            // already in the call, since this is what starts it.
+            await Clients.OthersInGroup(roomId.ToString())
+                .SendAsync("GroupCallStarted", roomId, callerId, callerName, isVideo);
+        }
+
+        public async Task JoinGroupCall(int roomId, bool isVideo)
+        {
+            var userId = GetUserId();
+            if (userId == "UNKNOWN") return;
+            var userName = Context.User?.FindFirstValue(ClaimTypes.Name) ?? "Someone";
+
+            List<(string UserId, string UserName)> existingParticipants;
+            lock (GroupCallLock)
+            {
+                if (!ActiveGroupCalls.ContainsKey(roomId))
+                    ActiveGroupCalls[roomId] = new HashSet<(string, string)>();
+
+                existingParticipants = ActiveGroupCalls[roomId]
+                    .Where(p => p.UserId != userId)
+                    .ToList();
+
+                ActiveGroupCalls[roomId].Add((userId, userName));
+            }
+
+            // The convention that avoids "glare" (both sides offering each
+            // other at once): whoever is JOINING always initiates the offer to
+            // each person who's already there. Existing participants just wait
+            // for an offer to arrive.
+            await Clients.Caller.SendAsync("ExistingParticipants", roomId,
+                existingParticipants.Select(p => new { userId = p.UserId, userName = p.UserName }));
+
+            await Clients.OthersInGroup(roomId.ToString())
+                .SendAsync("ParticipantJoined", roomId, userId, userName);
+        }
+
+        public async Task LeaveGroupCall(int roomId)
+        {
+            var userId = GetUserId();
+            if (userId == "UNKNOWN") return;
+
+            lock (GroupCallLock)
+            {
+                if (ActiveGroupCalls.ContainsKey(roomId))
+                {
+                    ActiveGroupCalls[roomId].RemoveWhere(p => p.UserId == userId);
+                    if (ActiveGroupCalls[roomId].Count == 0)
+                        ActiveGroupCalls.Remove(roomId);
+                }
+            }
+
+            await Clients.OthersInGroup(roomId.ToString())
+                .SendAsync("ParticipantLeft", roomId, userId);
+        }
 
         public async Task JoinRoom(int roomId)
         {

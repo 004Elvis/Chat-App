@@ -23,3 +23,17 @@ export interface CallLog {
   durationSeconds: number;
   status: 'Completed' | 'Rejected' | 'Missed' | 'Cancelled';
 }
+
+export interface GroupCallParticipant {
+  userId: string;
+  userName: string;
+  stream: MediaStream | null;
+  isMuted: boolean;
+}
+
+export interface GroupCallState {
+  status: 'idle' | 'incoming' | 'active';
+  roomId: number | null;
+  isVideo: boolean;
+  incomingCallerName: string | null;
+}

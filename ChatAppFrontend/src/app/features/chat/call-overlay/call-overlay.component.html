@@ -1,4 +1,3 @@
-
 <video #localVideo class="local-video" [class.hidden-el]="!showVideoUI" autoplay playsinline muted></video>
 <video #remoteVideo class="remote-video" [class.hidden-el]="!showVideoUI" autoplay playsinline></video>
 <audio #remoteAudio [class.hidden-el]="showVideoUI" autoplay></audio>
@@ -59,9 +58,10 @@
             {{ (callService.callState().remoteUserName || 'U').charAt(0).toUpperCase() }}
           </div>
           <h2>{{ callService.callState().remoteUserName }}</h2>
+          <p class="call-duration">{{ callService.formattedDuration() }}</p>
+        } @else {
+          <p class="call-duration call-duration-video">{{ callService.formattedDuration() }}</p>
         }
-
-        <p class="call-duration">{{ callService.formattedDuration() }}</p>
 
         <div class="call-active-controls">
           <button class="call-control-btn" [class.call-control-active]="callService.isMuted()" (click)="toggleMute()">
