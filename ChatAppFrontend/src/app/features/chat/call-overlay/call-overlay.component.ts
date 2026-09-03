@@ -15,9 +15,12 @@ export class CallOverlayComponent {
   @ViewChild('remoteVideo') remoteVideoRef?: ElementRef<HTMLVideoElement>;
   @ViewChild('remoteAudio') remoteAudioRef?: ElementRef<HTMLAudioElement>;
 
-  // Elements now exist in the DOM from the start (see template), so
-  // this only controls CSS visibility, not creation timing.
   showVideoUI = false;
+
+  dimOverlay = computed(() => {
+    const s = this.callService.callState();
+    return !(s.status === 'active' && s.isVideo);
+  });
 
   constructor(public callService: CallService) {
     effect(() => {

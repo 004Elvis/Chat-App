@@ -1,4 +1,4 @@
-import { Component, effect } from '@angular/core';
+import { Component, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GroupCallService } from '../../../core/services/group-call.service';
 import { IconComponent } from '../../../core/components/icon/icon.component';
@@ -16,6 +16,10 @@ export class GroupCallOverlayComponent {
 
   get participantList() {
     return Array.from(this.callService.participants().values());
+  }
+
+  get totalInCall(): number {
+    return this.participantList.length + 1;
   }
 
   getInitials(name: string): string {
