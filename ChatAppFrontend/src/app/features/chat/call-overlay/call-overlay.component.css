@@ -4,10 +4,10 @@
 
 .local-video {
   position: fixed;
-  top: 20px;
-  right: 20px;
-  width: 140px;
-  height: 190px;
+  top: 16px;
+  right: 16px;
+  width: 110px;
+  height: 150px;
   object-fit: cover;
   border-radius: 12px;
   border: 2px solid rgba(255, 255, 255, 0.3);
@@ -22,17 +22,25 @@
   height: 100%;
   object-fit: cover;
   background: #111;
-  z-index: 2999;
+  z-index: 2998;
 }
 
 .call-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.97);
   z-index: 3000;
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
+}
+
+/* Only ringing/calling/voice-only screens get the dark background -
+   an active video call leaves this transparent so the remote video
+   (a sibling element) is what's actually visible. */
+.call-overlay-dimmed {
+  background: rgba(15, 23, 42, 0.97);
+  pointer-events: auto;
 }
 
 .call-screen {
@@ -42,31 +50,34 @@
   gap: 12px;
   color: white;
   text-align: center;
+  padding: 0 20px;
+  pointer-events: auto;
 }
 
 .call-avatar {
-  width: 110px;
-  height: 110px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   background: var(--primary);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.75rem;
+  font-size: 2.5rem;
   font-weight: 700;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
 }
 
 .call-avatar-large {
-  width: 130px;
-  height: 130px;
-  font-size: 3.25rem;
+  width: 120px;
+  height: 120px;
+  font-size: 3rem;
 }
 
 .call-screen h2 {
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   color: white;
   font-weight: 600;
 }
@@ -83,33 +94,40 @@
   margin: 8px 0 0 0;
 }
 
-/* Bigger, clearer, more inviting accept/reject buttons */
+.call-duration-video {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 6px 14px;
+  border-radius: 999px;
+  z-index: 3002;
+  margin: 0;
+  pointer-events: none;
+}
+
 .call-actions {
   display: flex;
-  gap: 64px;
-  margin-top: 48px;
+  gap: 56px;
+  margin-top: 40px;
 }
 
 .call-btn {
-  width: 76px;
-  height: 76px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
 }
 
-.call-btn:hover {
-  transform: scale(1.1);
-}
-
-.call-btn:active {
-  transform: scale(0.96);
-}
+.call-btn:hover { transform: scale(1.08); }
+.call-btn:active { transform: scale(0.96); }
 
 .call-btn-reject {
   background: #ef4444;
@@ -128,40 +146,30 @@
 }
 
 .call-btn-small {
-  width: 60px;
-  height: 60px;
-}
-
-.call-active-screen {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  z-index: 3000;
+  width: 58px;
+  height: 58px;
 }
 
 .call-active-controls {
   position: fixed;
-  bottom: 40px;
+  bottom: 28px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 20px;
+  gap: 16px;
   align-items: center;
   background: rgba(0, 0, 0, 0.45);
-  padding: 14px 22px;
+  padding: 12px 18px;
   border-radius: 999px;
   z-index: 3002;
   backdrop-filter: blur(6px);
+  pointer-events: auto;
+  max-width: calc(100% - 32px);
 }
 
 .call-control-btn {
-  width: 50px;
-  height: 50px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   border: none;
   background: rgba(255, 255, 255, 0.15);
@@ -170,42 +178,55 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  flex-shrink: 0;
   transition: background 0.15s ease;
 }
 
-.call-control-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
+.call-control-btn:hover { background: rgba(255, 255, 255, 0.25); }
+.call-control-active { background: rgba(239, 68, 68, 0.85); }
 
-.call-control-active {
-  background: rgba(239, 68, 68, 0.85);
-}
-
-.call-duration-video {
-  position: fixed;
-  top: 20px;
-  left: 20px;
-  background: rgba(0, 0, 0, 0.45);
-  padding: 6px 14px;
-  border-radius: 999px;
-  z-index: 3002;
-  margin: 0;
-}
-
+/* Mobile */
 @media (max-width: 480px) {
   .local-video {
-    width: 100px;
-    height: 140px;
+    width: 84px;
+    height: 116px;
     top: 12px;
     right: 12px;
   }
 
   .call-actions {
-    gap: 48px;
+    gap: 40px;
+    margin-top: 32px;
   }
 
   .call-btn {
-    width: 68px;
-    height: 68px;
+    width: 64px;
+    height: 64px;
+  }
+
+  .call-avatar {
+    width: 84px;
+    height: 84px;
+    font-size: 2.1rem;
+  }
+
+  .call-avatar-large {
+    width: 100px;
+    height: 100px;
+    font-size: 2.5rem;
+  }
+
+  .call-screen h2 {
+    font-size: 1.25rem;
+  }
+
+  .call-active-controls {
+    gap: 10px;
+    padding: 10px 14px;
+  }
+
+  .call-control-btn {
+    width: 44px;
+    height: 44px;
   }
 }

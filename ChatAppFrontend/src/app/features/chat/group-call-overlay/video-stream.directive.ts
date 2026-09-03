@@ -1,7 +1,7 @@
 import { Directive, ElementRef, Input } from '@angular/core';
 
 @Directive({
-  selector: 'video[appVideoStream]',
+  selector: 'video[appVideoStream], audio[appVideoStream]',
   standalone: true
 })
 export class VideoStreamDirective {

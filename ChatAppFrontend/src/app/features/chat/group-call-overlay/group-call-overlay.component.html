@@ -1,3 +1,7 @@
+@for (p of participantList; track p.userId) {
+  <audio [appVideoStream]="p.stream" autoplay style="display:none"></audio>
+}
+
 @if (callService.callState().status !== 'idle') {
   <div class="gc-overlay">
 
@@ -23,28 +27,30 @@
     @if (callService.callState().status === 'active') {
       <div class="gc-active">
         <div class="gc-header">
-          <span>{{ participantList.length + 1 }} in call</span>
+          <span>{{ totalInCall }} in call</span>
           <span class="gc-duration">{{ callService.formattedDuration() }}</span>
         </div>
 
         <div class="gc-grid" [class.gc-grid-audio-only]="!callService.callState().isVideo">
+
+          <!-- Your own tile, always first -->
+          <div class="gc-tile">
+            @if (callService.callState().isVideo) {
+              <video [appVideoStream]="callService.localStream()" autoplay playsinline muted></video>
+            } @else {
+              <div class="gc-tile-avatar">You</div>
+            }
+            <span class="gc-tile-name">You</span>
+          </div>
+
           @for (p of participantList; track p.userId) {
             <div class="gc-tile">
               @if (callService.callState().isVideo && p.stream) {
-                <video
-                  [appVideoStream]="p.stream"
-                  autoplay playsinline
-                ></video>
+                <video [appVideoStream]="p.stream" autoplay playsinline></video>
               } @else {
                 <div class="gc-tile-avatar">{{ getInitials(p.userName) }}</div>
               }
               <span class="gc-tile-name">{{ p.userName }}</span>
-            </div>
-          }
-
-          @if (participantList.length === 0) {
-            <div class="gc-waiting">
-              <p>Waiting for others to join...</p>
             </div>
           }
         </div>

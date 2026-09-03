@@ -1,9 +1,9 @@
 <video #localVideo class="local-video" [class.hidden-el]="!showVideoUI" autoplay playsinline muted></video>
 <video #remoteVideo class="remote-video" [class.hidden-el]="!showVideoUI" autoplay playsinline></video>
-<audio #remoteAudio [class.hidden-el]="showVideoUI" autoplay></audio>
+<audio #remoteAudio autoplay></audio>
 
 @if (callService.callState().status !== 'idle') {
-  <div class="call-overlay">
+  <div class="call-overlay" [class.call-overlay-dimmed]="dimOverlay()">
     @if (callService.callState().status === 'ringing') {
       <div class="call-screen">
         <div class="call-avatar">
@@ -52,36 +52,36 @@
     }
 
     @if (callService.callState().status === 'active') {
-      <div class="call-active-screen">
-        @if (!callService.callState().isVideo) {
+      @if (!callService.callState().isVideo) {
+        <div class="call-screen">
           <div class="call-avatar call-avatar-large">
             {{ (callService.callState().remoteUserName || 'U').charAt(0).toUpperCase() }}
           </div>
           <h2>{{ callService.callState().remoteUserName }}</h2>
           <p class="call-duration">{{ callService.formattedDuration() }}</p>
-        } @else {
-          <p class="call-duration call-duration-video">{{ callService.formattedDuration() }}</p>
+        </div>
+      } @else {
+        <p class="call-duration call-duration-video">{{ callService.formattedDuration() }}</p>
+      }
+
+      <div class="call-active-controls">
+        <button class="call-control-btn" [class.call-control-active]="callService.isMuted()" (click)="toggleMute()">
+          <app-icon [name]="callService.isMuted() ? 'mic-off' : 'mic'" [size]="20"></app-icon>
+        </button>
+
+        <button class="call-control-btn" [class.call-control-active]="callService.isSpeakerOn()" (click)="toggleSpeaker()">
+          <app-icon name="volume" [size]="20"></app-icon>
+        </button>
+
+        @if (callService.callState().isVideo) {
+          <button class="call-control-btn" [class.call-control-active]="callService.isCameraOff()" (click)="toggleCamera()">
+            <app-icon [name]="callService.isCameraOff() ? 'camera-off' : 'camera'" [size]="20"></app-icon>
+          </button>
         }
 
-        <div class="call-active-controls">
-          <button class="call-control-btn" [class.call-control-active]="callService.isMuted()" (click)="toggleMute()">
-            <app-icon [name]="callService.isMuted() ? 'mic-off' : 'mic'" [size]="20"></app-icon>
-          </button>
-
-          <button class="call-control-btn" [class.call-control-active]="callService.isSpeakerOn()" (click)="toggleSpeaker()">
-            <app-icon name="volume" [size]="20"></app-icon>
-          </button>
-
-          @if (callService.callState().isVideo) {
-            <button class="call-control-btn" [class.call-control-active]="callService.isCameraOff()" (click)="toggleCamera()">
-              <app-icon [name]="callService.isCameraOff() ? 'camera-off' : 'camera'" [size]="20"></app-icon>
-            </button>
-          }
-
-          <button class="call-btn call-btn-reject call-btn-small" (click)="end()">
-            <app-icon name="phone-off" [size]="20" class="icon-inverted"></app-icon>
-          </button>
-        </div>
+        <button class="call-btn call-btn-reject call-btn-small" (click)="end()">
+          <app-icon name="phone-off" [size]="20" class="icon-inverted"></app-icon>
+        </button>
       </div>
     }
   </div>
