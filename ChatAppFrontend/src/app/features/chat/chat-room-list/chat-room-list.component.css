@@ -16,6 +16,7 @@
 }
 
 .sidebar-username {
+  color: var(--sidebar-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
