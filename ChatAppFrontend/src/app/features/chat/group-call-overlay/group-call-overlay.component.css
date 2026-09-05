@@ -187,10 +187,10 @@
   }
 
   .gc-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
-    padding: 6px 10px;
-  }
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  padding: 8px 12px;
+}
 
   .gc-tile-avatar {
     width: 44px;
@@ -206,5 +206,16 @@
   .gc-control-btn {
     width: 42px;
     height: 42px;
+  }
+
+  .gc-grid-audio-only {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  max-width: 100%;
+  }
+
+  .gc-grid-audio-only .gc-tile-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 1.3rem;
   }
 }
