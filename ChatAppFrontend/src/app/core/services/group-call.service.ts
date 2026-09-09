@@ -4,7 +4,12 @@ import { GroupCallState, GroupCallParticipant } from '../models/call.model';
 
 const ICE_SERVERS: RTCIceServer[] = [
   { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' }
+  { urls: 'stun:stun1.l.google.com:19302' },
+  {
+    urls: 'turn:YOUR_VM_PUBLIC_IP:3478',
+    username: 'chatapp',
+    credential: 'YOUR_CHOSEN_PASSWORD'
+  }
 ];
 
 interface PeerEntry {

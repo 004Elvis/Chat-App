@@ -44,11 +44,11 @@
               ],
               "outputHashing": "all",
               "fileReplacements": [
-      {
-        "replace": "src/environments/environment.ts",
-        "with": "src/environments/environment.prod.ts"
-      }
-    ]
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ]
             },
             "development": {
               "optimization": false,
@@ -60,6 +60,11 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "allowedHosts": [
+              "bao-isopetalous-familiarly.ngrok-free.dev"
+            ]
+          },
           "configurations": {
             "production": {
               "buildTarget": "ChatAppFrontend:build:production"
