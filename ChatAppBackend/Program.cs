@@ -142,7 +142,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
     {
-        policy.WithOrigins("http://localhost:4200", "https://your-app.vercel.app")
+        policy.WithOrigins("http://localhost:4200", "https://chat-app-smoky-chi-76.vercel.app")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
