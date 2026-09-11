@@ -28,7 +28,8 @@ export class ForgotPasswordComponent {
     this.loading.set(true);
     this.error.set('');
 
-    this.http.post('http://localhost:5082/api/auth/forgot-password',
+    // Corrected to point to your live DuckDNS backend
+    this.http.post('https://myelvischat.duckdns.org/api/auth/forgot-password',
       { email: this.email })
       .subscribe({
         next: () => {

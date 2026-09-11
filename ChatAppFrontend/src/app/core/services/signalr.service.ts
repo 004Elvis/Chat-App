@@ -35,8 +35,9 @@ export class SignalRService {
     const token = this.authService.getToken();
     console.log('SignalR token exists:', !!token);
 
+    // Corrected to point to your live DuckDNS backend
     this.hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl(`http://localhost:5082/chathub?access_token=${token}`, {
+      .withUrl(`https://myelvischat.duckdns.org/chathub?access_token=${token}`, {
         transport: signalR.HttpTransportType.WebSockets,
         skipNegotiation: true
       })
@@ -75,14 +76,14 @@ export class SignalRService {
   async sendMessage(roomId: number, content: string, replyToMessageId?: number,
   attachment?: { fileUrl: string; fileName: string; fileType: string;
     fileSizeBytes: number; messageType: string }): Promise<void> {
-  console.log('SignalR sendMessage called - roomId:', roomId, 'content:', content);
-  console.log('Hub connection state:', this.hubConnection?.state);
-  if (this.hubConnection) {
-    await this.hubConnection.invoke(
-      'SendMessage', roomId, content, replyToMessageId ?? null, attachment ?? null
-    );
+    console.log('SignalR sendMessage called - roomId:', roomId, 'content:', content);
+    console.log('Hub connection state:', this.hubConnection?.state);
+    if (this.hubConnection) {
+      await this.hubConnection.invoke(
+        'SendMessage', roomId, content, replyToMessageId ?? null, attachment ?? null
+      );
+    }
   }
-}
 
   async deleteMessage(messageId: number): Promise<void> {
     if (this.hubConnection) {
@@ -109,52 +110,52 @@ export class SignalRService {
   }
 
   async callUser(targetUserId: string, roomId: number, isVideo: boolean): Promise<void> {
-  if (this.hubConnection) {
-    await this.hubConnection.invoke('CallUser', targetUserId, roomId, isVideo);
+    if (this.hubConnection) {
+      await this.hubConnection.invoke('CallUser', targetUserId, roomId, isVideo);
+    }
   }
-}
 
-async sendCallOffer(targetUserId: string, sdp: string, roomId: number, isVideo: boolean): Promise<void> {
-  if (this.hubConnection) {
-    await this.hubConnection.invoke('SendCallOffer', targetUserId, sdp, roomId, isVideo);
+  async sendCallOffer(targetUserId: string, sdp: string, roomId: number, isVideo: boolean): Promise<void> {
+    if (this.hubConnection) {
+      await this.hubConnection.invoke('SendCallOffer', targetUserId, sdp, roomId, isVideo);
+    }
   }
-}
 
-async sendCallAnswer(targetUserId: string, sdp: string): Promise<void> {
-  if (this.hubConnection) {
-    await this.hubConnection.invoke('SendCallAnswer', targetUserId, sdp);
+  async sendCallAnswer(targetUserId: string, sdp: string): Promise<void> {
+    if (this.hubConnection) {
+      await this.hubConnection.invoke('SendCallAnswer', targetUserId, sdp);
+    }
   }
-}
 
-async sendIceCandidate(targetUserId: string, candidate: string): Promise<void> {
-  if (this.hubConnection) {
-    await this.hubConnection.invoke('SendIceCandidate', targetUserId, candidate);
+  async sendIceCandidate(targetUserId: string, candidate: string): Promise<void> {
+    if (this.hubConnection) {
+      await this.hubConnection.invoke('SendIceCandidate', targetUserId, candidate);
+    }
   }
-}
 
-async rejectCall(targetUserId: string): Promise<void> {
-  if (this.hubConnection) {
-    await this.hubConnection.invoke('RejectCall', targetUserId);
+  async rejectCall(targetUserId: string): Promise<void> {
+    if (this.hubConnection) {
+      await this.hubConnection.invoke('RejectCall', targetUserId);
+    }
   }
-}
 
-async endCall(targetUserId: string): Promise<void> {
-  if (this.hubConnection) {
-    await this.hubConnection.invoke('EndCall', targetUserId);
+  async endCall(targetUserId: string): Promise<void> {
+    if (this.hubConnection) {
+      await this.hubConnection.invoke('EndCall', targetUserId);
+    }
   }
-}
 
-async startGroupCall(roomId: number, isVideo: boolean): Promise<void> {
-  if (this.hubConnection) await this.hubConnection.invoke('StartGroupCall', roomId, isVideo);
-}
+  async startGroupCall(roomId: number, isVideo: boolean): Promise<void> {
+    if (this.hubConnection) await this.hubConnection.invoke('StartGroupCall', roomId, isVideo);
+  }
 
-async joinGroupCall(roomId: number, isVideo: boolean): Promise<void> {
-  if (this.hubConnection) await this.hubConnection.invoke('JoinGroupCall', roomId, isVideo);
-}
+  async joinGroupCall(roomId: number, isVideo: boolean): Promise<void> {
+    if (this.hubConnection) await this.hubConnection.invoke('JoinGroupCall', roomId, isVideo);
+  }
 
-async leaveGroupCall(roomId: number): Promise<void> {
-  if (this.hubConnection) await this.hubConnection.invoke('LeaveGroupCall', roomId);
-}
+  async leaveGroupCall(roomId: number): Promise<void> {
+    if (this.hubConnection) await this.hubConnection.invoke('LeaveGroupCall', roomId);
+  }
 
   clearMessages(): void {
     this.messages$.next([]);
