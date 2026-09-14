@@ -80,9 +80,9 @@ export class ResetPasswordComponent implements OnInit {
         setTimeout(() => this.router.navigate(['/login']), 3000);
       },
       error: (err) => {
-        this.error.set(err.error?.message || 'Reset failed. Link may have expired.');
+        this.error.set(err.error?.message || 'Reset failed. Please try again.');
         this.loading.set(false);
-      }
+}
     });
   }
 }
