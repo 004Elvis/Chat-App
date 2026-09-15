@@ -244,43 +244,63 @@ export class ChatComponent implements OnInit, OnDestroy {
     });
   }
 
-  async selectRoom(room: ChatRoom): Promise<void> {
-    const previousRoom = this.selectedRoom();
+async selectRoom(room: ChatRoom): Promise<void> {
+  const previousRoom = this.selectedRoom();
 
-    if (previousRoom && previousRoom.id !== room.id) {
-      await this.signalRService.leaveRoom(previousRoom.id);
-    }
+  if (previousRoom && previousRoom.id !== room.id) {
+    await this.signalRService.leaveRoom(previousRoom.id);
+  }
 
-    this.signalRService.clearMessages();
-    this.messages.set([]);
+  this.signalRService.clearMessages();
+  this.messages.set([]);
 
+  let fullRoom: ChatRoom;
+  try {
+    fullRoom = await firstValueFrom(this.chatService.getRoom(room.id));
+  } catch (error) {
+    // The room genuinely doesn't exist or we lost access - this IS a
+    // real case for removing it from the sidebar.
+    console.error('Could not load room:', error);
+    this.dropRoom(room.id);
+    return;
+  }
+
+  this.selectedRoom.set(fullRoom);
+
+  if (fullRoom.isGroup) {
+    await this.ensureGroupKeysLoaded(fullRoom.id);
+  }
+
+  try {
+    await this.joinRoomWithRetry(fullRoom.id);
+  } catch (error) {
+    console.error('Could not join room via SignalR:', error);
+    return;
+  }
+
+  try {
+    const messages = await firstValueFrom(this.chatService.getMessages(fullRoom.id));
+    this.signalRService.messages$.next([...messages].reverse());
+  } catch (error) {
+    console.error('Could not load messages:', error);
+  }
+
+  if (window.innerWidth < 768) {
+    this.showSidebar.set(false);
+  }
+}
+
+private async joinRoomWithRetry(roomId: number, attempts = 3): Promise<void> {
+  for (let i = 0; i < attempts; i++) {
     try {
-      const fullRoom = await firstValueFrom(
-        this.chatService.getRoom(room.id)
-      );
-
-      this.selectedRoom.set(fullRoom);
-
-      if (fullRoom.isGroup) {
-        await this.ensureGroupKeysLoaded(fullRoom.id);
-      }
-
-      await this.signalRService.joinRoom(fullRoom.id);
-
-      const messages = await firstValueFrom(
-        this.chatService.getMessages(fullRoom.id)
-      );
-
-      this.signalRService.messages$.next([...messages].reverse());
-
-      if (window.innerWidth < 768) {
-        this.showSidebar.set(false);
-      }
-    } catch (error) {
-      console.error('Could not select room:', error);
-      this.dropRoom(room.id);
+      await this.signalRService.joinRoom(roomId);
+      return;
+    } catch (err) {
+      if (i === attempts - 1) throw err;
+      await new Promise(resolve => setTimeout(resolve, 800));
     }
   }
+}
 
   showRoomList(): void {
     this.showSidebar.set(true);
