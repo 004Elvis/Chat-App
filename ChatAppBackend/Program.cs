@@ -13,12 +13,10 @@ Env.Load(); //imediately loads the .env file
 
 var builder = WebApplication.CreateBuilder(args);
 
-//Inject the SendGrid key into your app configuration
-var sendGridKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY");
-if (!string.IsNullOrEmpty(sendGridKey))
+var gmailAppPassword = Environment.GetEnvironmentVariable("GMAIL_APP_PASSWORD");
+if (!string.IsNullOrEmpty(gmailAppPassword))
 {
-    builder.Configuration["EmailSettings:SendGridApiKey"] = sendGridKey; //ensures that any dependency i have set up that binds EmailSettings will semalessly reveive the API  key from the .env file
-
+    builder.Configuration["EmailSettings:SendGridApiKey"] = gmailAppPassword;
 }
 
 var googleClientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");

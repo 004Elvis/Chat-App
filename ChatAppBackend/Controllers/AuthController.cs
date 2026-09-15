@@ -10,6 +10,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using System.Linq;
 
 namespace ChatAppBackend.Controllers
 {
@@ -161,6 +162,21 @@ public async Task<IActionResult> ForgotPassword(
 public async Task<IActionResult> ResetPassword(
     [FromBody] ResetPasswordDto dto)
 {
+    if (!ModelState.IsValid)
+    {
+        var errors = ModelState.Values
+            .SelectMany(v => v.Errors)
+            .Select(e => e.ErrorMessage)
+            .Where(m => !string.IsNullOrWhiteSpace(m))
+            .ToList();
+
+        var message = errors.Count > 0
+            ? string.Join(" ", errors)
+            : "Please check your password meets the requirements.";
+
+        return BadRequest(new { message });
+    }
+
     var resetToken = await _context.PasswordResetTokens
         .Include(t => t.User)
         .FirstOrDefaultAsync(t =>
