@@ -28,31 +28,50 @@ export class SignalRService {
   existingParticipants$ = new Subject<{ roomId: number; participants: { userId: string; userName: string }[] }>();
   participantJoined$ = new Subject<{ roomId: number; userId: string; userName: string }>();
   participantLeft$ = new Subject<{ roomId: number; userId: string }>();
+  reconnected$ = new Subject<void>();
+  connectionState$ = new BehaviorSubject<'connected' | 'reconnecting' | 'disconnected'>('disconnected');
 
   constructor(private authService: AuthService) {}
 
   async startConnection(): Promise<void> {
-    const token = this.authService.getToken();
-    console.log('SignalR token exists:', !!token);
+  const token = this.authService.getToken();
+  console.log('SignalR token exists:', !!token);
 
-    // Corrected to point to your live DuckDNS backend
-    this.hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl(`https://myelvischat.duckdns.org/chathub?access_token=${token}`, {
-        transport: signalR.HttpTransportType.WebSockets,
-        skipNegotiation: true
-      })
-      .withAutomaticReconnect()
-      .build();
+  this.hubConnection = new signalR.HubConnectionBuilder()
+    .withUrl(`https://myelvischat.duckdns.org/chathub?access_token=${token}`, {
+      transport: signalR.HttpTransportType.WebSockets,
+      skipNegotiation: true
+    })
+    .withAutomaticReconnect([0, 2000, 5000, 10000, 15000])
+    .build();
 
-    this.registerHandlers();
+  this.registerHandlers();
 
-    try {
-      await this.hubConnection.start();
-      console.log('SignalR connected');
-    } catch (err) {
-      console.error('SignalR connection error:', err);
-    }
+  this.hubConnection.onreconnecting(() => {
+    console.warn('SignalR reconnecting...');
+    this.connectionState$.next('reconnecting');
+  });
+
+  this.hubConnection.onreconnected(() => {
+    console.log('SignalR reconnected');
+    this.connectionState$.next('connected');
+    this.reconnected$.next();
+  });
+
+  this.hubConnection.onclose(() => {
+    console.error('SignalR connection closed permanently');
+    this.connectionState$.next('disconnected');
+  });
+
+  try {
+    await this.hubConnection.start();
+    console.log('SignalR connected');
+    this.connectionState$.next('connected');
+  } catch (err) {
+    console.error('SignalR connection error:', err);
+    this.connectionState$.next('disconnected');
   }
+}
 
   async stopConnection(): Promise<void> {
     if (this.hubConnection) {

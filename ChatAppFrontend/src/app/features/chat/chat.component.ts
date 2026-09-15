@@ -99,6 +99,18 @@ export class ChatComponent implements OnInit, OnDestroy {
       this.groupKeysLoadedFor.delete(roomId);
       await this.ensureGroupKeysLoaded(roomId);
     });
+
+    this.signalRService.reconnected$.subscribe(async () => {
+  const currentRoom = this.selectedRoom();
+  if (currentRoom) {
+    try {
+      await this.signalRService.joinRoom(currentRoom.id);
+    } catch (err) {
+      console.error('Could not rejoin room after reconnect:', err);
+    }
+  }
+});
+
   }
 
   private async setupEncryption(): Promise<void> {
