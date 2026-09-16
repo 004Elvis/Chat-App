@@ -1,5 +1,6 @@
 .call-logs-page {
-  min-height: 100vh;
+  min-height: 100vh; /* fallback */
+  min-height: 100dvh;
   background: var(--bg);
   padding: var(--spacing-xl);
   max-width: 700px;

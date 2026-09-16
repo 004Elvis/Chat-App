@@ -260,7 +260,8 @@ a:hover { color: var(--primary-dark); }
 
 /* AUTH PAGE SHARED STYLES */
 .auth-container {
-  min-height: 100vh;
+  min-height: 100vh; /* fallback */
+  min-height: 100dvh; /* real mobile viewport height, avoids the address-bar cutoff bug */
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -520,4 +521,3 @@ a:hover { color: var(--primary-dark); }
 .auth-divider:not(:empty)::after {
   margin-left: .75em;
 }
-

@@ -1,6 +1,7 @@
 .chat-layout {
   display: flex;
-  height: 100vh;
+  height: 100vh; /* fallback */
+  height: 100dvh; 
   width: 100vw;
   overflow: hidden;
   background: var(--bg);
@@ -9,7 +10,8 @@
 .chat-sidebar {
   width: var(--sidebar-width);
   min-width: var(--sidebar-width);
-  height: 100vh;
+  height: 100vh; /* fallback */
+  height: 100dvh; 
   background: var(--sidebar-bg);
   display: flex;
   flex-direction: column;
@@ -18,7 +20,8 @@
 
 .chat-main {
   flex: 1;
-  height: 100vh;
+  height: 100vh; /* fallback */
+  height: 100dvh; 
   display: flex;
   flex-direction: column;
   overflow: hidden;
