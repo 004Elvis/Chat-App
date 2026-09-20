@@ -12,7 +12,6 @@ import { GroupMembersModalComponent } from '../group-members-modal/group-members
 import { RoomMediaModalComponent } from '../room-media-modal/room-media-modal.component';
 import { IconComponent } from '../../../core/components/icon/icon.component';
 import { ChatBackgroundService } from '../../../core/services/chat-background.service';
-import { CryptoService } from '../../../core/services/crypto.service';
 import { CallService } from '../../../core/services/call.service';
 import { GroupCallService } from '../../../core/services/group-call.service';
 
@@ -38,12 +37,10 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
   showMediaModal = signal(false);
   contextMenu = signal<{ message: Message; x: number; y: number } | null>(null);
   replyingTo = signal<Message | null>(null);
-  isEncrypted = signal(false);
   private longPressTimer: any;
 
   constructor(
     private bgService: ChatBackgroundService,
-    private cryptoService: CryptoService,
     private callService: CallService,
     private groupCallService: GroupCallService
   ) {}
@@ -54,23 +51,7 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
 
   ngOnChanges(): void {
     this.shouldScroll = true;
-    this.refreshEncryptionStatus();
   }
-
-  private async refreshEncryptionStatus(): Promise<void> {
-  if (!this.room || !this.currentUser) {
-    this.isEncrypted.set(false);
-    return;
-  }
-
-  if (this.room.isGroup) {
-    this.isEncrypted.set(this.cryptoService.hasGroupKey(this.room.id));
-    return;
-  }
-
-  const key = await this.cryptoService.getRoomKey(this.room, this.currentUser);
-  this.isEncrypted.set(!!key);
-}
 
   ngAfterViewChecked(): void {
     if (this.shouldScroll) {
@@ -161,21 +142,12 @@ export class ChatWindowComponent implements OnChanges, AfterViewChecked {
   }
 
   async onSendMessage(content: string): Promise<void> {
-  console.log('Sending message to room:', this.room?.id, 'content:', content);
-  if (content.trim() && this.room) {
-    const replyId = this.replyingTo()?.id;
-    let toSend = content;
-
-    if (this.room.isGroup) {
-      toSend = await this.cryptoService.encryptForGroup(this.room.id, content);
-    } else if (this.currentUser) {
-      toSend = await this.cryptoService.encryptForRoom(this.room, this.currentUser, content);
+    if (content.trim() && this.room) {
+      const replyId = this.replyingTo()?.id;
+      await this.signalRService.sendMessage(this.room.id, content, replyId);
+      this.replyingTo.set(null);
     }
-
-    await this.signalRService.sendMessage(this.room.id, toSend, replyId);
-    this.replyingTo.set(null);
   }
-}
 
   async onAttachmentSent(attachment: {
     fileUrl: string; fileName: string; fileType: string;

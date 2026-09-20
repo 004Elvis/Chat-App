@@ -11,6 +11,8 @@ export class SignalRService {
   messages$ = new BehaviorSubject<Message[]>([]);
   typingUsers$ = new BehaviorSubject<string[]>([]);
   onlineUsers$ = new BehaviorSubject<string[]>([]);
+  connectionState$ = new BehaviorSubject<'connected' | 'reconnecting' | 'disconnected'>('disconnected');
+  reconnected$ = new Subject<void>();
 
   roomDeleted$ = new Subject<number>();
   memberRemoved$ = new Subject<{ roomId: number; userId: string }>();
@@ -23,55 +25,48 @@ export class SignalRService {
   iceCandidateReceived$ = new Subject<{ callerId: string; candidate: string }>();
   callRejected$ = new Subject<{ callerId: string }>();
   callEnded$ = new Subject<{ callerId: string }>();
-  
+
   groupCallStarted$ = new Subject<{ roomId: number; callerId: string; callerName: string; isVideo: boolean }>();
   existingParticipants$ = new Subject<{ roomId: number; participants: { userId: string; userName: string }[] }>();
   participantJoined$ = new Subject<{ roomId: number; userId: string; userName: string }>();
   participantLeft$ = new Subject<{ roomId: number; userId: string }>();
-  reconnected$ = new Subject<void>();
-  connectionState$ = new BehaviorSubject<'connected' | 'reconnecting' | 'disconnected'>('disconnected');
 
   constructor(private authService: AuthService) {}
 
   async startConnection(): Promise<void> {
-  const token = this.authService.getToken();
-  console.log('SignalR token exists:', !!token);
+    const token = this.authService.getToken();
 
-  this.hubConnection = new signalR.HubConnectionBuilder()
-    .withUrl(`https://myelvischat.duckdns.org/chathub?access_token=${token}`, {
-      transport: signalR.HttpTransportType.WebSockets,
-      skipNegotiation: true
-    })
-    .withAutomaticReconnect([0, 2000, 5000, 10000, 15000])
-    .build();
+    this.hubConnection = new signalR.HubConnectionBuilder()
+      .withUrl(`https://myelvischat.duckdns.org/chathub?access_token=${token}`, {
+        transport: signalR.HttpTransportType.WebSockets,
+        skipNegotiation: true
+      })
+      .withAutomaticReconnect([0, 2000, 5000, 10000, 15000])
+      .build();
 
-  this.registerHandlers();
+    this.registerHandlers();
 
-  this.hubConnection.onreconnecting(() => {
-    console.warn('SignalR reconnecting...');
-    this.connectionState$.next('reconnecting');
-  });
+    this.hubConnection.onreconnecting(() => {
+      this.connectionState$.next('reconnecting');
+    });
 
-  this.hubConnection.onreconnected(() => {
-    console.log('SignalR reconnected');
-    this.connectionState$.next('connected');
-    this.reconnected$.next();
-  });
+    this.hubConnection.onreconnected(() => {
+      this.connectionState$.next('connected');
+      this.reconnected$.next();
+    });
 
-  this.hubConnection.onclose(() => {
-    console.error('SignalR connection closed permanently');
-    this.connectionState$.next('disconnected');
-  });
+    this.hubConnection.onclose(() => {
+      this.connectionState$.next('disconnected');
+    });
 
-  try {
-    await this.hubConnection.start();
-    console.log('SignalR connected');
-    this.connectionState$.next('connected');
-  } catch (err) {
-    console.error('SignalR connection error:', err);
-    this.connectionState$.next('disconnected');
+    try {
+      await this.hubConnection.start();
+      this.connectionState$.next('connected');
+    } catch (err) {
+      console.error('SignalR connection error:', err);
+      this.connectionState$.next('disconnected');
+    }
   }
-}
 
   async stopConnection(): Promise<void> {
     if (this.hubConnection) {
@@ -95,8 +90,6 @@ export class SignalRService {
   async sendMessage(roomId: number, content: string, replyToMessageId?: number,
   attachment?: { fileUrl: string; fileName: string; fileType: string;
     fileSizeBytes: number; messageType: string }): Promise<void> {
-    console.log('SignalR sendMessage called - roomId:', roomId, 'content:', content);
-    console.log('Hub connection state:', this.hubConnection?.state);
     if (this.hubConnection) {
       await this.hubConnection.invoke(
         'SendMessage', roomId, content, replyToMessageId ?? null, attachment ?? null

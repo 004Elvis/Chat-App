@@ -7,7 +7,6 @@ import {
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
-import { firstValueFrom } from 'rxjs';
 
 import { ChatRoom } from '../../../core/models/chat-room.model';
 import { User } from '../../../core/models/user.model';
@@ -15,7 +14,6 @@ import { User } from '../../../core/models/user.model';
 import { IconComponent } from '../../../core/components/icon/icon.component';
 
 import { ChatService } from '../../../core/services/chat.service';
-import { CryptoService } from '../../../core/services/crypto.service';
 
 @Component({
   selector: 'app-group-members-modal',
@@ -37,10 +35,7 @@ export class GroupMembersModalComponent {
   actionLoadingUserId = signal<string | null>(null);
   leavingOrDeleting = signal(false);
 
-  constructor(
-    private chatService: ChatService,
-    private cryptoService: CryptoService
-  ) {}
+  constructor(private chatService: ChatService) {}
 
   getInitials(name: string): string {
     return (name || 'U')
@@ -106,28 +101,8 @@ export class GroupMembersModalComponent {
     this.chatService
       .removeMember(this.room.id, member.id)
       .subscribe({
-        next: async () => {
-          try {
-            const updatedRoom = await firstValueFrom(
-              this.chatService.getRoom(this.room.id)
-            );
-
-            await this.rotateGroupKey(member.id);
-
-            this.actionLoadingUserId.set(null);
-
-          } catch (error) {
-            console.error(
-              'Group key rotation failed:',
-              error
-            );
-
-            this.actionError.set(
-              'Member was removed, but the encryption key could not be rotated.'
-            );
-
-            this.actionLoadingUserId.set(null);
-          }
+        next: () => {
+          this.actionLoadingUserId.set(null);
         },
 
         error: error => {
@@ -194,52 +169,6 @@ export class GroupMembersModalComponent {
         }
       });
   }
-
-  private rotateGroupKey(excludeUserId: string): void {
-  const remainingMembers =
-    this.room.members.filter(
-      member => member.id !== excludeUserId
-    );
-
-  this.chatService
-    .getGroupKeyVersionInfo(this.room.id)
-    .subscribe({
-      next: async versionInfo => {
-        const wrapped =
-          await this.cryptoService
-            .createAndWrapGroupKey(
-              remainingMembers
-            );
-
-        if (!wrapped) {
-          console.error(
-            'Could not generate a new group key.'
-          );
-          return;
-        }
-
-        this.chatService.distributeGroupKey(
-          this.room.id,
-          versionInfo.latestVersion + 1,
-          wrapped.myPublicKeyJwk,
-          wrapped.entries
-        ).subscribe({
-          error: err => {
-            console.error(
-              'Group key rotation failed:',
-              err
-            );
-          }
-        });
-      },
-      error: err => {
-        console.error(
-          'Could not fetch group key version info:',
-          err
-        );
-      }
-    });
-}
 
   close(): void {
     this.closed.emit();
