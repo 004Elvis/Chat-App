@@ -1,5 +1,4 @@
 <div class="chat-window">
-  <!-- Header -->
   <div class="chat-header">
     <button class="btn-icon back-btn" (click)="backClicked.emit()">
       ←
@@ -15,19 +14,9 @@
       [class.chat-header-clickable]="room.isGroup"
       (click)="room.isGroup && showMembersModal.set(true)">
       <h3 class="chat-header-name">{{ displayName }}</h3>
-          @if (room.isGroup) {
+      @if (room.isGroup) {
         <span class="chat-header-members">
           {{ room.members.length || 0 }} members
-          @if (isEncrypted()) {
-            <span class="chat-header-encrypted-inline">
-              <app-icon name="lock" [size]="10"></app-icon> Encrypted
-            </span>
-          }
-        </span>
-      } @else if (isEncrypted()) {
-        <span class="chat-header-encrypted">
-          <app-icon name="lock" [size]="12"></app-icon>
-          End-to-end encrypted
         </span>
       }
     </div>
@@ -47,13 +36,12 @@
         <app-icon name="video-call" [size]="20"></app-icon>
       </button>
     }
+
     <button class="btn-icon" title="Media, Docs & Links" (click)="showMediaModal.set(true)">
       <app-icon name="image" [size]="20"></app-icon>
     </button>
-
   </div>
 
-  <!-- Messages -->
   <div class="messages-container" [style.background-image]="currentBackground()">
     @if (messages.length === 0) {
       <div class="no-messages">
